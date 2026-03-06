@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     const modulesInsert = await supabase
       .from('project_modules')
       .insert(modulesPayload)
-      .select('id, module_key, module_name, module_status, module_weight, project_id');
+      .select('id, module_key, module_name, module_status, module_weight, project_id, module_vector, required_skills_vector');
 
     if (modulesInsert.error || !modulesInsert.data) {
       return NextResponse.json({ error: modulesInsert.error?.message ?? 'Module creation failed' }, { status: 400 });
@@ -124,16 +124,16 @@ export async function POST(request: NextRequest) {
             },
             ...(plan.backupFreelancerId
               ? [
-                  {
-                    module_id: module.id,
-                    freelancer_id: plan.backupFreelancerId,
-                    assignment_role: 'backup',
-                    shift_start: plan.shiftStart,
-                    shift_end: plan.shiftEnd,
-                    status: 'scheduled',
-                    assignment_reason: plan.reason,
-                  },
-                ]
+                {
+                  module_id: module.id,
+                  freelancer_id: plan.backupFreelancerId,
+                  assignment_role: 'backup',
+                  shift_start: plan.shiftStart,
+                  shift_end: plan.shiftEnd,
+                  status: 'scheduled',
+                  assignment_reason: plan.reason,
+                },
+              ]
               : []),
           ]);
 
@@ -155,8 +155,9 @@ export async function POST(request: NextRequest) {
       modules: safeModules,
       redirectTo: `/projects/${projectInsert.data.id}`,
     });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (error: any) {
+    console.error("DEBUG FATAL API ERROR:", error);
+    const message = error?.message || error?.details || error?.hint || String(error);
+    return NextResponse.json({ error: message, full: error }, { status: 500 });
   }
 }

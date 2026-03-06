@@ -9,9 +9,9 @@ export interface MatchResult {
   score: number;
 }
 
-export function scoreFreelancerForModule(module: ProjectModule, freelancer: User): MatchResult {
-  const similarity = cosineSimilarity(freelancer.skill_vector, module.module_vector);
-  const reliabilityMultiplier = Math.max(0.5, Math.min(1.5, freelancer.reliability_score));
+export function scoreFreelancerForModule(module: any, freelancer: any): MatchResult {
+  const similarity = cosineSimilarity(freelancer.skill_vector, module.required_skills_vector || module.module_vector);
+  const reliabilityMultiplier = Math.max(0.5, Math.min(1.5, freelancer.reliability_score || 1));
   const availabilityMultiplier = Math.max(0.3, Math.min(1.2, freelancer.availability_score));
   const score = similarity * reliabilityMultiplier * availabilityMultiplier;
 

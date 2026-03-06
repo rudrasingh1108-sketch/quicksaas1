@@ -4,19 +4,20 @@
 
 :root {
   --font-scale: 1.1;
-  --background: 0 0% 100%;
-  --foreground: 162 69% 12%;
-  --card: 0 0% 100%;
-  --muted: 162 20% 96%;
-  --muted-foreground: 162 30% 40%;
-  --border: 162 20% 88%;
-  --primary: 162 69% 16%;
-  --primary-foreground: 0 0% 100%;
-  --accent: 162 45% 95%;
-  --sidebar-background: 162 69% 12%;
-  --sidebar-foreground: 0 0% 100%;
-  --sidebar-accent: 162 69% 8%;
-  --sidebar-border: 162 69% 8%;
+  /* Modern High-Contrast Light Theme */
+  --background: 210 40% 98%;        /* Very light gray/blue background */
+  --foreground: 222 47% 11%;        /* Very dark navy text for high contrast */
+  --card: 0 0% 100%;                /* Pure white cards */
+  --muted: 210 40% 93%;             /* Slightly darker background for muted elements */
+  --muted-foreground: 215 16% 47%;  /* Medium gray text */
+  --border: 214 32% 91%;            /* Light gray borders */
+  --primary: 221 83% 53%;           /* Vibrant blue primary */
+  --primary-foreground: 210 40% 98%;/* White text on primary buttons */
+  --accent: 210 40% 93%;            /* Light blue accent */
+  --sidebar-background: 222 47% 11%;/* Dark sidebar for contrast */
+  --sidebar-foreground: 210 40% 98%;/* White text in sidebar */
+  --sidebar-accent: 217 33% 17%;
+  --sidebar-border: 217 33% 17%;
 }
 
 html[data-theme='starbucks'] {

@@ -11,10 +11,10 @@ import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import FreelancerOnboarding from '../../components/freelancer/onboarding-form';
 
-interface ModuleCard { 
-  id: string; 
-  module_name: string; 
-  module_status: string; 
+interface ModuleCard {
+  id: string;
+  module_name: string;
+  module_status: string;
   shift?: {
     status: string;
     shift_start: string;
@@ -47,10 +47,10 @@ export default function FreelancerDashboard() {
 
       const { data: profileData } = actorId
         ? await supabase
-            .from('freelancer_profiles')
-            .select('*')
-            .eq('user_id', actorId)
-            .maybeSingle()
+          .from('freelancer_profiles')
+          .select('*')
+          .eq('user_id', actorId)
+          .maybeSingle()
         : { data: null as any };
 
       setProfile(profileData);
@@ -76,10 +76,10 @@ export default function FreelancerDashboard() {
   }, []);
 
   const cards = [
-    { label: 'Reliability', value: '1.12' },
-    { label: 'Earnings (MTD)', value: '₹1,42,400' },
-    { label: 'Active Modules', value: String(modules.length) },
-    { label: 'Completion Rate', value: '94%' },
+    { label: 'Reliability', value: profile?.reliability_score ? Number(profile.reliability_score).toFixed(2) : '-' },
+    { label: 'Total Earnings', value: profile?.total_earnings_inr ? `₹${Number(profile.total_earnings_inr).toLocaleString()}` : '₹0' },
+    { label: 'Active Modules', value: String(modules.filter(m => !['completed', 'cancelled'].includes(m.module_status)).length) },
+    { label: 'Completion Rate', value: profile?.total_modules_completed ? `${Math.round((profile.total_modules_completed / (profile.total_modules_completed + (profile.total_modules_failed || 0))) * 100)}%` : '-' },
   ];
 
   return (
@@ -123,19 +123,19 @@ export default function FreelancerDashboard() {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.05),transparent_70%)]" />
                 <div className="absolute -top-24 -left-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl animate-pulse" />
                 <div className="absolute -bottom-24 -right-24 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl animate-pulse delay-700" />
-                
+
                 <div className="relative z-10 flex flex-col items-center">
                   <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
                     <Sparkles className="h-10 w-10 text-emerald-400 animate-pulse" />
                   </div>
-                  
+
                   <h3 className="text-2xl font-bold tracking-tight text-white mb-2">
                     Standby for High-Priority Assignments
                   </h3>
                   <p className="text-emerald-500/60 max-w-md mx-auto mb-8 font-mono text-sm uppercase tracking-widest">
                     Your workstation is active and synchronized
                   </p>
-                  
+
                   <div className="flex gap-4 justify-center">
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/5 border border-emerald-500/10 text-[10px] text-emerald-400/70 font-mono uppercase">
                       <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
@@ -147,7 +147,7 @@ export default function FreelancerDashboard() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Scanning line */}
                 <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent h-20 w-full animate-wave opacity-30" style={{ animationDuration: '4s' }} />
               </div>
