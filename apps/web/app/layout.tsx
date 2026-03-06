@@ -21,7 +21,7 @@ const GeistMono = localFont({
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="starbucks">
+    <html lang="en">
       <body className={cn(GeistSans.variable, GeistMono.variable, 'font-sans')}>
         <UiPrefsBootstrap />
         <CustomCursor />

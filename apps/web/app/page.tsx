@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, RotateCcw, EyeOff, Activity } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring, useMotionValueEvent } from 'framer-motion';
 
 // ── ANIMATED CANVAS (network nodes) ──────────────────────────────────────────
 function NetworkCanvas() {
@@ -83,40 +83,31 @@ function DataTicker() {
 // This replicates Terminal Industries' signature:
 //   words start at opacity 0.15 (dim), then sequentially light up to 1
 //   as the user's scroll position reaches each word's threshold.
+function Word({ children, progress, range }: { children: React.ReactNode, progress: any, range: [number, number] }) {
+  const opacity = useTransform(progress, range, [0.15, 1]);
+  return <motion.span style={{ opacity, display: 'inline' }}>{children}</motion.span>;
+}
+
 function ScrollRevealText({ text, className }: { text: string; className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
-  const words = text.split(' ');
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start 0.9", "start 0.2"]
+  });
 
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      const rect = el.getBoundingClientRect();
-      const windowH = window.innerHeight;
-      // progress 0→1 as element travels from bottom of screen to top
-      const start = windowH;
-      const end = windowH * 0.1;
-      const raw = (start - rect.top) / (start - end);
-      setProgress(Math.max(0, Math.min(1, raw)));
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const words = text.split(' ');
 
   return (
     <div ref={containerRef} className={className}>
       {words.map((w, i) => {
-        const threshold = i / words.length;
-        const wordProgress = Math.max(0, Math.min(1, (progress - threshold) / (1 / words.length)));
-        const opacity = 0.15 + wordProgress * 0.85;
+        const start = i / words.length;
+        const end = start + (1 / words.length);
         return (
-          <span
-            key={i}
-            style={{ opacity, transition: 'opacity 0.3s ease', display: 'inline' }}
-          >
-            {w}{i < words.length - 1 ? ' ' : ''}
+          <span key={i}>
+            <Word progress={scrollYProgress} range={[start, end]}>
+              {w}
+            </Word>
+            {i < words.length - 1 ? ' ' : ''}
           </span>
         );
       })}
@@ -130,90 +121,55 @@ const STICKY_ITEMS = [
   { num: '02', title: 'We orchestrate, invisibly.', body: "Specialists are matched and deployed on daily shifts by our platform. You never interact with them directly — that's by design. Anonymous, accountable, continuous execution." },
   { num: '03', title: 'Track progress, not people.', body: 'Your live feed shows milestone updates in plain language. No freelancer names, no technical jargon. Just clear, verified progress toward your deliverable.' },
 ];
-
-function StickyFeaturePanel() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  // Cache the absolute top of the container once after mount.
-  // We compute it on first scroll (or after a short delay) so the DOM is settled.
-  const containerTopRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    // Compute the container's true distance from page top.
-    const getContainerTop = () => {
-      const el = containerRef.current;
-      if (!el) return 0;
-      // getBoundingClientRect().top is viewport-relative; add scrollY for absolute page position.
-      return el.getBoundingClientRect().top + window.scrollY;
-    };
-
-    const handleScroll = () => {
-      const el = containerRef.current;
-      if (!el) return;
-
-      // Lazily initialise container top (re-compute on every scroll to handle layout shifts).
-      const containerTop = getContainerTop();
-      const scrollable = el.offsetHeight - window.innerHeight; // total px the pin should last
-      const scrolled = window.scrollY - containerTop;
-      const fraction = Math.max(0, Math.min(1, scrolled / scrollable));
-
-      setActiveIndex(
-        Math.min(STICKY_ITEMS.length - 1, Math.floor(fraction * STICKY_ITEMS.length))
-      );
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
+function ProtocolSteps() {
   return (
-    // height = N steps × 100vh so the sticky panel stays pinned for the full scroll range
-    <div ref={containerRef} style={{ height: `${STICKY_ITEMS.length * 100}vh` }}>
-      <div className="sticky top-0 h-screen flex overflow-hidden">
-
-        {/* LEFT — all three steps are always in the DOM, active one highlighted */}
-        <div className="w-full md:w-1/2 flex flex-col justify-center px-10 md:px-20 gap-16">
-          {STICKY_ITEMS.map((item, i) => {
-            const isActive = i === activeIndex;
-            return (
-              <div
-                key={item.num}
-                style={{
-                  opacity: isActive ? 1 : 0.18,
-                  transform: isActive ? 'translateY(0)' : 'translateY(4px)',
-                  transition: 'opacity 0.6s ease, transform 0.6s ease',
-                }}
-              >
-                <div className="font-mono text-[10px] tracking-[0.2em] text-emerald-500/70 mb-4">
-                  {item.num}
-                </div>
-                <h3
-                  className="font-light leading-tight mb-4 tracking-tight"
-                  style={{
-                    fontSize: 'clamp(28px, 3.5vw, 52px)',
-                    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.35)',
-                    transition: 'color 0.6s ease',
-                  }}
-                >
-                  {item.title}
-                </h3>
-                <p className="text-white/35 font-light max-w-md leading-relaxed text-[15px]">
-                  {item.body}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* RIGHT — pinned visual */}
-        <div className="hidden md:flex w-1/2 items-center justify-center relative bg-[#0a0a10] border-l border-white/5">
-          <MosaicGrid activeIndex={activeIndex} />
-          <div className="absolute bottom-12 left-10 font-mono text-[11px] text-white/20 tracking-widest">
-            {String(activeIndex + 1).padStart(2, '0')} / {String(STICKY_ITEMS.length).padStart(2, '0')}
+    <div className="flex flex-col gap-24 px-10 md:px-20 py-10 max-w-7xl mx-auto">
+      {STICKY_ITEMS.map((item, i) => (
+        <motion.div
+          key={item.num}
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-15%" }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col md:flex-row gap-10 md:gap-20 items-center border border-white/5 bg-[#070710] p-10 rounded-sm hover:bg-[#0a0a15] transition-colors"
+        >
+          {/* Text Content */}
+          <div className="flex-1">
+            <div className="font-mono text-[10px] tracking-[0.2em] text-emerald-500/70 mb-4">
+              STEP {item.num}
+            </div>
+            <h3 className="font-light leading-tight mb-4 tracking-tight text-white text-[clamp(28px,3.5vw,48px)]">
+              {item.title}
+            </h3>
+            <p className="text-white/40 font-light leading-relaxed text-[16px]">
+              {item.body}
+            </p>
           </div>
-        </div>
 
-      </div>
+          {/* Abstract Visual / Number Node */}
+          <div className="flex-1 flex justify-end w-full">
+            <div className="relative w-full max-w-sm aspect-video bg-[#050508] border border-white/5 flex items-center justify-center overflow-hidden group">
+              {/* Decorative background grid */}
+              <div className="absolute inset-0 grid grid-cols-6 grid-rows-4 gap-1 opacity-20 p-2">
+                {Array.from({ length: 24 }).map((_, j) => (
+                  <div key={j} className="bg-white/5 rounded-sm group-hover:bg-emerald-500/10 transition-colors duration-700 delay-[${j * 20}ms]" />
+                ))}
+              </div>
+
+              {/* Floating Step Number */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
+                viewport={{ once: true }}
+                className="relative z-10 font-mono text-[80px] font-light text-white/10 tracking-widest select-none group-hover:text-emerald-500/20 transition-colors duration-500"
+              >
+                {item.num}
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      ))}
     </div>
   );
 }
@@ -251,7 +207,15 @@ function MosaicCell({ delay, color }: { delay: number; color: string }) {
 // ── PAGE ──────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [isLoaded, setIsLoaded] = useState(false);
-  useEffect(() => { setIsLoaded(true); }, []);
+  useEffect(() => {
+    setIsLoaded(true);
+    // Force the dark starbucks theme just for the landing page
+    document.documentElement.setAttribute('data-theme', 'starbucks');
+    return () => {
+      // Clear the theme attribute when leaving the landing page so the app goes light
+      document.documentElement.removeAttribute('data-theme');
+    };
+  }, []);
 
   const { scrollYProgress } = useScroll();
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
@@ -344,10 +308,30 @@ export default function HomePage() {
           <span className="text-[10px] tracking-[0.24em] uppercase text-white/20 font-mono">Scroll to explore</span>
           <div className="w-[1px] h-10 bg-gradient-to-b from-white/20 to-transparent" />
         </motion.div>
+
+        {/* Global Trusted By Strip to fill the bottom empty space */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isLoaded ? 1 : 0 }}
+          transition={{ duration: 1.5, delay: 1.8 }}
+          className="absolute bottom-0 left-0 w-full border-t border-white/5 bg-black/40 backdrop-blur-md py-4 overflow-hidden z-20 flex flex-col items-center"
+        >
+          <div className="font-mono text-[9px] tracking-[0.3em] text-white/20 uppercase mb-3 text-center">
+            Powering Next-Gen Enterprises
+          </div>
+          <div className="flex gap-16 md:gap-32 items-center justify-center opacity-40 grayscale hover:grayscale-0 transition-all duration-700 w-full max-w-7xl px-10">
+            {/* Abstract geometric logos to represent clients */}
+            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-white rounded-sm rotate-45"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Aura</span></div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white rounded-full"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Nexus</span></div>
+            <div className="flex items-center gap-2 hidden md:flex"><div className="w-4 h-4 bg-white rounded-br-lg"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Stark</span></div>
+            <div className="flex items-center gap-2 hidden md:flex"><div className="w-4 h-4 border-t-2 border-l-2 border-white rounded-tl-lg"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Vanguard</span></div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-white rounded-full"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Omicron</span></div>
+          </div>
+        </motion.div>
       </section>
 
       {/* ════ 2. "IMAGINE" — light section, giant scroll-reveal text ══════════ */}
-      <section className="relative bg-[#f0f1f4] py-32 md:py-48 px-6 md:px-20">
+      <section className="relative bg-[#f0f1f4] py-24 md:py-32 px-6 md:px-20">
         {/* Eyebrow */}
         <div className="flex items-center gap-3 mb-16 text-[#0d1a2e]/40">
           <div className="w-6 h-[1px] bg-current" />
@@ -364,12 +348,28 @@ export default function HomePage() {
         <div className="mt-16 ml-1 font-mono text-[11px] tracking-[0.15em] text-[#0d1a2e]/35 uppercase">
           Managed · Anonymous · Continuous
         </div>
+
+        {/* Highlight Metrics */}
+        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl border-t border-[#0d1a2e]/10 pt-12">
+          <div className="flex flex-col gap-2">
+            <span className="text-3xl font-light text-[#0d1a2e]">48h</span>
+            <span className="text-sm text-[#0d1a2e]/50 font-light">From brief to first commit.</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-3xl font-light text-[#0d1a2e]">24/7</span>
+            <span className="text-sm text-[#0d1a2e]/50 font-light">Continuous delivery cycles.</span>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-3xl font-light text-[#0d1a2e]">100%</span>
+            <span className="text-sm text-[#0d1a2e]/50 font-light">IP ownership transfer.</span>
+          </div>
+        </div>
       </section>
 
       {/* ════ 3. STICKY "HOW IT WORKS" — pinned panel ════════════════════════ */}
       <section className="relative bg-[#050508]">
         {/* Section header */}
-        <div className="px-10 md:px-20 pt-24 pb-12">
+        <div className="px-10 md:px-20 pt-16 pb-8">
           <div className="flex items-center gap-3 text-white/20 mb-4">
             <div className="w-6 h-[1px] bg-white/20" />
             <span className="font-mono text-[10px] tracking-[0.2em] uppercase">Protocol</span>
@@ -377,11 +377,11 @@ export default function HomePage() {
           <h2 className="text-[clamp(32px,5vw,72px)] font-light tracking-tight text-white">Three moves.</h2>
         </div>
 
-        <StickyFeaturePanel />
+        <ProtocolSteps />
       </section>
 
       {/* ════ 4. MOSAIC BENTO — dark section ══════════════════════════════════ */}
-      <section className="relative bg-[#050508] px-4 md:px-12 py-24">
+      <section className="relative bg-[#050508] px-4 md:px-12 py-20">
         <div className="max-w-[1400px] mx-auto">
           <div className="mb-16">
             <div className="flex items-center gap-4 text-white/20 mb-5">
@@ -412,11 +412,47 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
+          {/* Integration Visual block to fill empty space */}
+          <div className="mt-8 border border-white/5 bg-[#070710] p-10 flex flex-col md:flex-row items-center justify-between gap-10">
+            <div className="flex-1">
+              <div className="font-mono text-[10px] tracking-[0.2em] text-emerald-500/60 mb-4">SYSTEM ARCHITECTURE</div>
+              <h3 className="text-2xl font-light text-white mb-4">Plug into our ecosystem.</h3>
+              <p className="text-white/30 text-sm leading-relaxed max-w-md font-light">
+                Our proprietary orchestration engine integrates directly into your existing CI/CD pipelines. We push commits to your repositories, update your staging environments, and manage the deployment lifecycle autonomously.
+              </p>
+            </div>
+
+            <div className="flex-1 flex justify-end">
+              {/* Abstract Git / CI visual */}
+              <div className="relative w-full max-w-xs aspect-video border border-white/10 bg-black/40 rounded-sm overflow-hidden flex items-center justify-center p-6">
+                {/* Decorative commit timeline */}
+                <div className="absolute left-10 top-0 bottom-0 w-px bg-white/10" />
+                <div className="flex flex-col gap-6 w-full relative z-10 pl-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                    <div className="flex-1 h-1 bg-white/5" />
+                    <div className="text-[9px] font-mono text-white/30 truncate">Merge branch 'feat/auth'</div>
+                  </div>
+                  <div className="flex items-center gap-4 opacity-60">
+                    <div className="w-2 h-2 rounded-full bg-white/20" />
+                    <div className="flex-1 h-1 bg-white/5" />
+                    <div className="text-[9px] font-mono text-white/20 truncate">CI Pipeline: Passed</div>
+                  </div>
+                  <div className="flex items-center gap-4 opacity-40">
+                    <div className="w-2 h-2 rounded-full bg-white/20" />
+                    <div className="flex-1 h-1 bg-white/5" />
+                    <div className="text-[9px] font-mono text-white/20 truncate">Deploy to staging</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ════ 5. CTA — light background again (dark→light→dark→light rhythm) ═ */}
-      <section className="relative bg-[#f0f1f4] py-32 md:py-40 px-6 md:px-20">
+      <section className="relative bg-[#f0f1f4] py-24 md:py-32 px-6 md:px-20">
         <div className="max-w-[1400px] mx-auto">
           {/* Word-by-word reveal on the CTA copy too */}
           <ScrollRevealText
