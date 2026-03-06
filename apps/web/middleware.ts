@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { env } from './lib/env';
 
 const protectedPrefixes = ['/client', '/freelancer', '/admin', '/projects', '/modules'];
 
@@ -7,8 +8,8 @@ export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder.placeholder',
+    env.supabaseUrl,
+    env.supabaseAnonKey,
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
