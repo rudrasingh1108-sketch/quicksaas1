@@ -46,12 +46,27 @@ export default function DeploymentAutomatorPage() {
 
         for (const step of steps) {
             setLogs(prev => [...prev, `[INFO] ${step}`]);
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, 600));
         }
 
-        setLogs(prev => [...prev, '[SUCCESS] Neural deployment complete. Primary link active.']);
-        setStatus('success');
-        setDeploying(false);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(`/api/freelancer/modules/${selectedModule}/deploy`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${session?.access_token}` }
+            });
+
+            if (!res.ok) throw new Error('Deployment sync failed');
+
+            setLogs(prev => [...prev, '[SUCCESS] Neural deployment complete. Primary link active.']);
+            setLogs(prev => [...prev, '[INFO] Progress synchronized with client mission control.']);
+            setStatus('success');
+        } catch (e) {
+            setLogs(prev => [...prev, '[ERROR] Failed to synchronize deployment state.']);
+            setStatus('error');
+        } finally {
+            setDeploying(false);
+        }
     };
 
     return (
@@ -61,14 +76,14 @@ export default function DeploymentAutomatorPage() {
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_-20%,rgba(16,185,129,0.15),transparent_50%)]" />
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-4 text-emerald-400">
-                            <Cpu className="w-5 h-5" />
-                            <span className="text-xs font-black uppercase tracking-[0.3em]">Infrastructure Engine</span>
+                            <Rocket className="w-5 h-5" />
+                            <span className="text-xs font-black uppercase tracking-[0.3em]">Production Edge Mesh</span>
                         </div>
                         <h1 className="text-3xl font-black italic tracking-tight mb-2 uppercase">
                             Deployment <span className="text-emerald-500">Automator</span>
                         </h1>
                         <p className="text-slate-400 text-sm font-medium">
-                            Neural-linked infrastructure provisioning. Deploy your assigned modules to the global production mesh with one click.
+                            Neural-linked infrastructure provisioning. Push your assigned modules to the global production mesh with automated verification.
                         </p>
                     </div>
                 </Card>

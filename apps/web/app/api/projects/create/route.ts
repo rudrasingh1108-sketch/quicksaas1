@@ -95,58 +95,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: modulesInsert.error?.message ?? 'Module creation failed' }, { status: 400 });
     }
 
-    const freelancers = await supabase
-      .from('users')
-      .select('id, role, specialty_tags, skill_vector, reliability_score, availability_score')
-      .eq('role', 'freelancer')
-      .is('deleted_at', null);
-
-    const assignmentMap: Record<string, string> = {};
-
-    if (freelancers.data) {
-      for (const module of modulesInsert.data) {
-        const plan = planAssignmentsForModule(module as any, freelancers.data as any);
-        if (plan.primaryFreelancerId) {
-          await supabase
-            .from('project_modules')
-            .update({ assigned_freelancer_id: plan.primaryFreelancerId, module_status: 'assigned' })
-            .eq('id', module.id);
-
-          await supabase.from('project_module_assignments').insert([
-            {
-              module_id: module.id,
-              freelancer_id: plan.primaryFreelancerId,
-              assignment_role: 'primary',
-              shift_start: plan.shiftStart,
-              shift_end: plan.shiftEnd,
-              status: 'scheduled',
-              assignment_reason: plan.reason,
-            },
-            ...(plan.backupFreelancerId
-              ? [
-                {
-                  module_id: module.id,
-                  freelancer_id: plan.backupFreelancerId,
-                  assignment_role: 'backup',
-                  shift_start: plan.shiftStart,
-                  shift_end: plan.shiftEnd,
-                  status: 'scheduled',
-                  assignment_reason: plan.reason,
-                },
-              ]
-              : []),
-          ]);
-
-          assignmentMap[module.id] = 'assigned';
-        }
-      }
-    }
-
+    // For real-data testing, we will NOT auto-assign freelancers. 
+    // They must claim modules from the pool on the freelancer dashboard.
     const safeModules = modulesInsert.data.map((m) => ({
       id: m.id,
       module_key: m.module_key,
       module_name: m.module_name,
-      module_status: assignmentMap[m.id] ?? m.module_status,
+      module_status: m.module_status,
       module_weight: m.module_weight,
     }));
 

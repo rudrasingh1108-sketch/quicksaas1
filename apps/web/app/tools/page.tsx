@@ -4,16 +4,16 @@ import Link from 'next/link';
 import { AppShell } from '../../components/layout/app-shell';
 import { Card } from '../../components/ui/card';
 import { motion } from 'framer-motion';
-import { Cpu, Database, Zap, Shield, Globe, Terminal, Box, Sparkles } from 'lucide-react';
+import { Cpu, Database, Zap, Shield, Globe, Terminal, Box, Sparkles, Rocket } from 'lucide-react';
 
 const tools = [
   {
     title: 'Deployment Automator',
-    desc: 'Neural-linked infrastructure provisioning for next-gen frameworks.',
-    icon: Cpu,
+    desc: 'Neural-linked infrastructure provisioning for production edge mesh.',
+    icon: Rocket,
     color: 'from-emerald-500 to-teal-600',
     status: 'OPTIMIZED',
-    stats: '0.4s latency'
+    stats: 'Edge Sync active'
   },
   {
     title: 'SQL Schema Architect',

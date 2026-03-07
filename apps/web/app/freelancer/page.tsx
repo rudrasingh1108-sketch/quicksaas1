@@ -174,12 +174,12 @@ export default function FreelancerDashboard() {
                                 <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                                   <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: '45%' }}
+                                    animate={{ width: module.module_status === 'completed' ? '100%' : '20%' }}
                                     className="h-full bg-emerald-500"
                                   />
                                 </div>
                                 <p className="text-[10px] text-muted-foreground font-medium italic">
-                                  Ending in {new Date(module.shift.shift_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  Shift ends {new Date(module.shift.shift_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                               </div>
                             )}
@@ -217,7 +217,7 @@ export default function FreelancerDashboard() {
               </Card>
 
               <Card className="p-6 border-emerald-500/20 bg-emerald-500/5">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500 mb-4">Global Match Engine</h3>
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500 mb-4">Neural Status</h3>
                 <div className="flex items-center gap-3">
                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-[10px] font-mono text-emerald-600/70 uppercase">Relay Nodes Synchronized</span>
@@ -227,6 +227,6 @@ export default function FreelancerDashboard() {
           </div>
         </div>
       )}
-    </AppShell>
+    </AppShell >
   );
 }

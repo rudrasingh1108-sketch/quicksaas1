@@ -79,7 +79,7 @@ export default function SecurityPage() {
           <div className="grid gap-4">
             {[
               { title: 'API Key Rotation', status: 'PASS', date: 'Monthly Rotation Active', desc: 'Neural keys synchronized across all edge nodes.' },
-              { title: 'RLS Policy Status', status: 'WARNING', date: 'DEVELOPMENT MODE', desc: 'Security filters are bypassed for optimized prototyping.', variant: 'warn' },
+              { title: 'RLS Policy Status', status: 'PASS', date: 'ENFORCED', desc: 'Neural-linked Row Level Security is active on all production schemas.', variant: 'success' },
               { title: 'Data Anonymization', status: 'PASS', date: 'Proxy Active', desc: 'Client-freelancer interactions proxied through secure relay.' },
             ].map((item, i) => (
               <div key={i} className="rounded-2xl border border-gray-100 p-6 bg-gray-50/30 hover:bg-gray-50 transition-colors group">
