@@ -28,6 +28,7 @@ export default function FreelancerDashboard() {
   const [available, setAvailable] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activity, setActivity] = useState<any[]>([]);
 
   async function load() {
     try {
@@ -60,6 +61,13 @@ export default function FreelancerDashboard() {
       const payload = await res.json();
       setModules(payload.modules ?? []);
       setAvailable(payload.available ?? []);
+
+      const { data: activityData } = await supabase
+        .from('work_snapshots')
+        .select('*, sender:users(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      setActivity(activityData ?? []);
     } finally {
       setLoading(false);
     }
@@ -134,65 +142,89 @@ export default function FreelancerDashboard() {
             </Card>
           )}
 
-          <Card className="p-5">
-            <p className="mb-4 text-lg font-semibold">Assigned modules</p>
-            {modules.length ? (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {modules.map((module, i) => (
-                  <motion.div key={module.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                    <Link href={`/modules/${module.id}`}>
-                      <Card className="h-full p-4 transition hover:border-primary/40">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-medium">{module.module_name}</p>
-                          <Badge>{module.module_status}</Badge>
-                        </div>
-                        {module.shift && (
-                          <div className="mt-4 pt-4 border-t border-border/50 text-xs text-muted-foreground space-y-1">
-                            <p>Shift: <span className="font-medium text-foreground">{new Date(module.shift.shift_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – {new Date(module.shift.shift_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></p>
-                            <p>Status: <Badge className="scale-75 origin-left ml-[-4px] capitalize">{module.shift.status}</Badge></p>
-                          </div>
-                        )}
-                      </Card>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-950 p-12 text-center shadow-2xl">
-                {/* Background Animation */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.05),transparent_70%)]" />
-                <div className="absolute -top-24 -left-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-24 -right-24 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl animate-pulse delay-700" />
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold tracking-tight">Active Assignments</h2>
+                  <Badge variant="outline" className="font-mono text-[10px]">{modules.length} Connected</Badge>
+                </div>
+                {modules.length ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {modules.map((module, i) => (
+                      <motion.div key={module.id} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
+                        <Link href={`/modules/${module.id}`}>
+                          <Card className="group h-full p-5 border-border/50 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/5 transition-all">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-2">
+                                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+                                  <Clock className="h-4 w-4" />
+                                </div>
+                                <p className="font-bold text-sm tracking-tight">{module.module_name}</p>
+                              </div>
+                              <Badge className="bg-emerald-500/10 text-emerald-500 border-none uppercase text-[9px] font-black tracking-widest">{module.module_status}</Badge>
+                            </div>
 
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-                    <Sparkles className="h-10 w-10 text-emerald-400 animate-pulse" />
+                            {module.shift && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-black tracking-widest">
+                                  <span>Shift Relay</span>
+                                  <span className="text-emerald-500">{module.shift.status}</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: '45%' }}
+                                    className="h-full bg-emerald-500"
+                                  />
+                                </div>
+                                <p className="text-[10px] text-muted-foreground font-medium italic">
+                                  Ending in {new Date(module.shift.shift_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                            )}
+                          </Card>
+                        </Link>
+                      </motion.div>
+                    ))}
                   </div>
+                ) : (
+                  <div className="relative overflow-hidden rounded-2xl border border-dashed border-border p-12 text-center">
+                    <p className="text-muted-foreground text-sm font-medium">No active neural links found.</p>
+                  </div>
+                )}
+              </Card>
+            </div>
 
-                  <h3 className="text-2xl font-bold tracking-tight text-white mb-2">
-                    Standby for High-Priority Assignments
-                  </h3>
-                  <p className="text-emerald-500/60 max-w-md mx-auto mb-8 font-mono text-sm uppercase tracking-widest">
-                    Your workstation is active and synchronized
-                  </p>
-
-                  <div className="flex gap-4 justify-center">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/5 border border-emerald-500/10 text-[10px] text-emerald-400/70 font-mono uppercase">
-                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                      Global Match Engine Online
-                    </div>
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/5 border border-cyan-500/10 text-[10px] text-cyan-400/70 font-mono uppercase">
-                      <Clock className="h-3 w-3" />
-                      Shift Relay Active
-                    </div>
+            <div className="space-y-6">
+              <Card className="p-6 bg-slate-950 text-white border-none shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.1),transparent_70%)]" />
+                <div className="relative z-10">
+                  <h3 className="text-sm font-black uppercase tracking-[0.2em] text-emerald-500 mb-6">Neural Activity Feed</h3>
+                  <div className="space-y-6">
+                    {activity.map((act, i) => (
+                      <div key={act.id} className="relative pl-6 border-l border-emerald-500/20">
+                        <div className="absolute -left-[4.5px] top-1 h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                        <p className="text-[10px] font-mono text-emerald-500/60 uppercase mb-1">
+                          {new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <p className="text-xs font-medium text-slate-300 line-clamp-2">{act.public_summary}</p>
+                      </div>
+                    ))}
+                    {!activity.length && <p className="text-xs text-slate-500 font-medium italic">Waiting for telemetry...</p>}
                   </div>
                 </div>
+              </Card>
 
-                {/* Scanning line */}
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent h-20 w-full animate-wave opacity-30" style={{ animationDuration: '4s' }} />
-              </div>
-            )}
-          </Card>
+              <Card className="p-6 border-emerald-500/20 bg-emerald-500/5">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500 mb-4">Global Match Engine</h3>
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-mono text-emerald-600/70 uppercase">Relay Nodes Synchronized</span>
+                </div>
+              </Card>
+            </div>
+          </div>
         </div>
       )}
     </AppShell>
