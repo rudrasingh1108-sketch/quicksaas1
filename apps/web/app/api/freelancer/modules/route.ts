@@ -28,20 +28,20 @@ export async function GET(request: NextRequest) {
 
   const modules = moduleIds.length
     ? await supabase
-        .from('project_modules')
-        .select('id, project_id, module_key, module_name, module_status, due_at, updated_at')
-        .in('id', moduleIds)
-        .is('deleted_at', null)
-        .order('updated_at', { ascending: false })
+      .from('project_modules')
+      .select('id, project_id, module_key, module_name, module_status, due_at, updated_at')
+      .in('id', moduleIds)
+      .is('deleted_at', null)
+      .order('updated_at', { ascending: false })
     : { data: [] as any[] };
 
   const snapshots = moduleIds.length
     ? await supabase
-        .from('work_snapshots')
-        .select('id, module_id, snapshot_type, public_summary, internal_summary, created_at')
-        .in('module_id', moduleIds)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false })
+      .from('work_snapshots')
+      .select('id, module_id, snapshot_type, public_summary, internal_summary, created_at')
+      .in('module_id', moduleIds)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
     : { data: [] as any[] };
 
   const latestSnapshotByModule = new Map<string, any>();
@@ -60,16 +60,28 @@ export async function GET(request: NextRequest) {
       ...m,
       shift: a
         ? {
-            assignment_id: a.id,
-            role: a.assignment_role,
-            status: a.status,
-            shift_start: a.shift_start,
-            shift_end: a.shift_end,
-          }
+          assignment_id: a.id,
+          role: a.assignment_role,
+          status: a.status,
+          shift_start: a.shift_start,
+          shift_end: a.shift_end,
+        }
         : null,
       latest_snapshot: latestSnapshotByModule.get(m.id) ?? null,
     };
   });
 
-  return NextResponse.json({ modules: result });
+  const queuedModules = await supabase
+    .from('project_modules')
+    .select('id, project_id, module_key, module_name, module_status, due_at, updated_at, module_weight, projects(total_price)')
+    .eq('module_status', 'queued')
+    .is('deleted_at', null)
+    .is('assigned_freelancer_id', null)
+    .order('created_at', { ascending: true })
+    .limit(10);
+
+  return NextResponse.json({
+    modules: result,
+    available: queuedModules.data ?? []
+  });
 }

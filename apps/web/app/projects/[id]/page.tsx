@@ -9,8 +9,9 @@ import { Badge } from '../../../components/ui/badge';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { History, FileCode, CheckCircle2, Clock, Cpu } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import { ProjectChat } from '../../../components/project/project-chat';
 
-interface ModuleItem { id: string; module_name: string; module_status: string; }
+interface ModuleItem { id: string; module_name: string; module_status: string; module_weight: number; assigned_freelancer_id?: string; due_at?: string; freelancer?: { full_name: string } }
 interface SessionItem { id: string; module_id: string; deployment_url: string; build_url: string; session_status: string; }
 interface ProgressLog { id: string; module_id: string; public_summary: string; percent_delta: number; created_at: string; }
 interface Snapshot { id: string; module_id: string; public_summary: string; created_at: string; }
@@ -23,6 +24,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [logs, setLogs] = useState<ProgressLog[]>([]);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   async function load() {
     const session = await supabase.auth.getSession();
@@ -31,7 +33,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     const res = await fetch(`/api/projects/${params.id}`, { headers: { Authorization: `Bearer ${token}` } });
     const raw = await res.text();
     const payload = raw ? (JSON.parse(raw) as any) : {};
-    
+
     if (!res.ok) {
       setLoading(false);
       return;
@@ -42,12 +44,19 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     setSessions(payload.sessions ?? []);
     setLogs(payload.progressLogs ?? []);
     setSnapshots(payload.workSnapshots ?? []);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single();
+      if (profile) setCurrentUserId(profile.id);
+    }
+
     setLoading(false);
   }
 
   useEffect(() => {
     load();
-    
+
     const moduleChannel = supabase.channel(`project-modules-${params.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'project_modules', filter: `project_id=eq.${params.id}` }, load)
       .subscribe();
@@ -95,14 +104,33 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 <div className="space-y-4">
                   {modules.map((module) => (
                     <div key={module.id} className="rounded-lg border border-border p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <FileCode className="h-4 w-4 text-primary" />
-                          <p className="text-sm font-medium">{module.module_name}</p>
+                      <div className="mb-3 flex items-start justify-between">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <FileCode className="h-4 w-4 text-primary" />
+                            <p className="text-sm font-medium">{module.module_name}</p>
+                          </div>
+                          {module.freelancer?.full_name ? (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              Assigned to: <span className="font-medium text-foreground">{module.freelancer.full_name}</span>
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">Unassigned</p>
+                          )}
                         </div>
-                        <Badge>{module.module_status}</Badge>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge>{module.module_status}</Badge>
+                          <div className="text-xs text-muted-foreground whitespace-nowrap">
+                            Budget: <span className="font-medium">₹{Math.round(project?.total_price * module.module_weight)}</span>
+                          </div>
+                        </div>
                       </div>
-                      <Progress value={module.module_status === 'completed' ? 100 : module.module_status === 'in_progress' ? 55 : 20} />
+                      <div className="mb-2">
+                        <Progress value={module.module_status === 'completed' ? 100 : module.module_status === 'in_progress' ? 55 : 20} />
+                      </div>
+                      {module.due_at && (
+                        <p className="text-[10px] text-right text-muted-foreground tracking-wider uppercase">ETA: {new Date(module.due_at).toLocaleString()}</p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -150,69 +178,35 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                     </div>
                   </div>
                 ) : (
-                  <div className="relative h-[480px] w-full overflow-hidden rounded-xl border-2 border-slate-800 bg-slate-950 p-0 font-mono text-[11px] text-emerald-400 shadow-2xl">
+                  <div className="relative h-[480px] w-full overflow-hidden rounded-xl border-2 border-slate-800 bg-slate-950 p-0 font-mono text-[11px] text-emerald-400 shadow-2xl flex flex-col">
                     {/* Simulated Browser Header */}
-                    <div className="flex items-center gap-3 border-b border-white/5 bg-slate-900/50 px-4 py-3">
+                    <div className="flex items-center gap-3 border-b border-white/5 bg-slate-900/50 px-4 py-3 shrink-0">
                       <div className="flex gap-1.5">
                         <div className="h-3 w-3 rounded-full bg-red-500/40" />
                         <div className="h-3 w-3 rounded-full bg-amber-500/40" />
                         <div className="h-3 w-3 rounded-full bg-emerald-500/40" />
                       </div>
                       <div className="flex-1 flex items-center rounded-lg bg-black/40 px-3 py-1.5 text-[10px] text-emerald-500/40 border border-white/5">
-                        https://{project?.title?.toLowerCase().replace(/\s+/g, '-') || 'project'}.gigzs.preview
+                        {project?.title?.toLowerCase().replace(/\s+/g, '-') || 'project'}.gigzs.preview
                       </div>
                     </div>
-                    
-                    {/* Simulated Content */}
-                    <div className="relative h-[calc(480px-45px)] p-6 overflow-hidden bg-[radial-gradient(circle_at_50%_50%,#020617,0%,#000000_100%)]">
-                      <div className="grid grid-cols-12 gap-4 h-full opacity-40">
-                        {/* Mock UI layout */}
-                        <div className="col-span-3 space-y-4">
-                          <div className="h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20" />
-                          <div className="space-y-2">
-                            {[1,2,3,4].map(i => (
-                              <div key={i} className="h-2 w-full rounded bg-emerald-500/5" />
-                            ))}
-                          </div>
-                        </div>
-                        <div className="col-span-9 space-y-6">
-                          <div className="h-32 rounded-xl bg-emerald-500/5 border border-emerald-500/10 animate-pulse" />
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="h-24 rounded-xl border border-emerald-500/10 bg-emerald-500/5" />
-                            <div className="h-24 rounded-xl border border-emerald-500/10 bg-emerald-500/5" />
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Floating Matrix-style status */}
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="text-center space-y-4 relative z-20">
-                          <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 animate-bounce">
-                            <Cpu className="h-8 w-8 text-emerald-400" />
+                    {/* Log Stream Terminal */}
+                    <div className="flex-1 p-4 overflow-y-auto space-y-1.5">
+                      {logs.length === 0 ? (
+                        <div className="text-emerald-500/50 animate-pulse mt-2">Waiting for execution logs...</div>
+                      ) : (
+                        [...logs].reverse().map((log) => (
+                          <div key={log.id} className="flex gap-3 font-mono leading-relaxed">
+                            <span className="text-emerald-500/40 shrink-0">
+                              {new Date(log.created_at).toLocaleTimeString()}
+                            </span>
+                            <span className={log.percent_delta > 0 ? "text-emerald-400" : "text-emerald-500/80"}>
+                              <span className="text-white/70">[system]</span> {log.public_summary} {log.percent_delta > 0 ? `(+${log.percent_delta}%)` : ''}
+                            </span>
                           </div>
-                          <div className="space-y-1">
-                            <h4 className="text-lg font-bold text-white tracking-tight uppercase">Provisioning Resources</h4>
-                            <p className="text-emerald-500/60 text-[10px] uppercase tracking-[0.3em]">Deploying to edge nodes...</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Log Stream Terminal Overlay */}
-                      <div className="absolute bottom-6 left-6 right-6 rounded-lg bg-black/90 border border-emerald-500/20 p-4 font-mono shadow-2xl backdrop-blur-md">
-                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-emerald-500/10">
-                          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[9px] font-bold text-emerald-500/80 uppercase">Build Pipeline: Active</span>
-                        </div>
-                        <div className="space-y-1.5 text-[9px] leading-relaxed">
-                          <div className="flex gap-2"><span className="text-emerald-500/30">01:42:09</span> <span className="text-white/70">[cli]</span> initializing docker container...</div>
-                          <div className="flex gap-2"><span className="text-emerald-500/30">01:42:11</span> <span className="text-white/70">[cli]</span> pulling image node:20-alpine</div>
-                          <div className="flex gap-2"><span className="text-emerald-500/30">01:42:15</span> <span className="text-emerald-500/80">[build]</span> npm install executed successfully</div>
-                          <div className="flex gap-2"><span className="text-emerald-500/30">01:42:18</span> <span className="text-emerald-400 animate-pulse">[deploy]</span> binding port 3000 to edge interface...</div>
-                        </div>
-                      </div>
-
-                      {/* High-tech Scanning Effect */}
-                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-emerald-500/10 to-transparent h-32 w-full animate-wave opacity-20" style={{ animationDuration: '2.5s' }} />
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
@@ -223,14 +217,26 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-2 rounded border border-border bg-card/50">
                     <span className="text-xs">GitHub Repository</span>
-                    <Badge variant="outline" className="text-[10px]">PRIVATE</Badge>
+                    <a href={`https://github.com/gigzs-deploy/${project?.id}`} target="_blank" rel="noreferrer" className="text-[10px] hover:underline flex items-center gap-1 text-primary">
+                      View Repo
+                    </a>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded border border-border bg-card/50">
                     <span className="text-xs">Cloud Environment</span>
-                    <Badge variant="outline" className="text-[10px]">ACTIVE</Badge>
+                    {latestDeploymentUrl ? (
+                      <a href={latestDeploymentUrl} target="_blank" rel="noreferrer" className="text-[10px] hover:underline flex items-center gap-1 text-primary">
+                        Open URL
+                      </a>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">PENDING LOGS</Badge>
+                    )}
                   </div>
                 </div>
               </Card>
+
+              {currentUserId && (
+                <ProjectChat projectId={params.id} currentUserId={currentUserId} />
+              )}
             </div>
           </div>
         </div>

@@ -71,9 +71,13 @@ html[data-theme='purple'] {
 
 * { @apply border-border; }
 
+html {
+  font-size: calc(100% * var(--font-scale, 1));
+  scroll-behavior: smooth;
+}
+
 body {
   @apply bg-background text-foreground antialiased;
-  font-size: calc(16px * var(--font-scale));
   cursor: none !important;
 }
 

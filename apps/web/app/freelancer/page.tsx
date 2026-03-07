@@ -25,6 +25,7 @@ interface ModuleCard {
 export default function FreelancerDashboard() {
   const supabase = createSupabaseBrowserClient();
   const [modules, setModules] = useState<ModuleCard[]>([]);
+  const [available, setAvailable] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,6 +59,7 @@ export default function FreelancerDashboard() {
       const res = await fetch('/api/freelancer/modules', { headers: { Authorization: `Bearer ${token}` } });
       const payload = await res.json();
       setModules(payload.modules ?? []);
+      setAvailable(payload.available ?? []);
     } finally {
       setLoading(false);
     }
@@ -94,6 +96,44 @@ export default function FreelancerDashboard() {
       ) : (
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{cards.map((card) => <Card key={card.label} className="p-5"><p className="text-sm text-muted-foreground">{card.label}</p><p className="mt-1 text-2xl font-semibold">{card.value}</p></Card>)}</div>
+
+          {available.length > 0 && (
+            <Card className="p-5 border-emerald-500/30 bg-emerald-500/5">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="h-5 w-5 text-emerald-400" />
+                <p className="text-lg font-semibold text-emerald-400">Available to Claim</p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {available.map((module) => (
+                  <Card key={module.id} className="p-4 border-emerald-500/20 bg-background/50 hover:border-emerald-500/50 transition-colors">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="font-medium">{module.module_name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Budget: ₹{Math.round((module.projects?.total_price || 0) * module.module_weight)}</p>
+                      </div>
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-none">NEW</Badge>
+                    </div>
+                    <button
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-md font-medium text-sm transition-colors"
+                      onClick={async () => {
+                        try {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          await fetch(`/api/freelancer/modules/${module.id}/claim`, {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${session?.access_token}` }
+                          });
+                          load();
+                        } catch (e) { console.error(e); }
+                      }}
+                    >
+                      Accept Assignment
+                    </button>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          )}
+
           <Card className="p-5">
             <p className="mb-4 text-lg font-semibold">Assigned modules</p>
             {modules.length ? (

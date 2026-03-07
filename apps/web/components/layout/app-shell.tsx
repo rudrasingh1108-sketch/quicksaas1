@@ -79,11 +79,11 @@ export function AppShell({
     .join('');
 
   return (
-    <div className="min-h-screen bg-[#050508] text-white font-sans">
+    <div className="min-h-screen bg-background text-foreground font-sans">
       {/* ── SIDEBAR ─────────────────────────────────────────────────────────── */}
       <aside
         className={cn(
-          'fixed left-0 top-0 hidden h-screen border-r border-white/5 bg-[#07070e] transition-all duration-300 lg:flex flex-col z-50',
+          'fixed left-0 top-0 hidden h-screen border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground transition-all duration-300 lg:flex flex-col z-50',
           mini ? 'w-[72px]' : 'w-64'
         )}
       >
@@ -94,8 +94,8 @@ export function AppShell({
           </div>
           {!mini && (
             <div className="overflow-hidden whitespace-nowrap">
-              <p className="text-white font-medium tracking-tight">Gigzs</p>
-              <p className="text-[9px] uppercase tracking-[0.2em] text-white/25 font-mono">Delivery OS</p>
+              <p className="text-sidebar-foreground font-medium tracking-tight">Gigzs</p>
+              <p className="text-[9px] uppercase tracking-[0.2em] text-sidebar-foreground/50 font-mono">Delivery OS</p>
             </div>
           )}
         </div>
@@ -114,8 +114,8 @@ export function AppShell({
                   'flex items-center rounded-lg transition-all duration-200 group relative',
                   mini ? 'justify-center p-3' : 'px-3 py-2.5',
                   isActive
-                    ? 'bg-white/8 text-white'
-                    : 'text-white/35 hover:bg-white/5 hover:text-white/70'
+                    ? 'bg-sidebar-accent text-sidebar-foreground'
+                    : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                 )}
               >
                 {isActive && (
@@ -133,20 +133,20 @@ export function AppShell({
         {/* Minimise toggle */}
         <button
           onClick={() => setMini(!mini)}
-          className="absolute -right-3 top-[72px] h-6 w-6 rounded-full bg-[#0d0d18] border border-white/10 flex items-center justify-center text-white/30 hover:text-white transition-colors shadow-lg"
+          className="absolute -right-3 top-[72px] h-6 w-6 rounded-full bg-sidebar-background border border-sidebar-border flex items-center justify-center text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors shadow-lg"
         >
           {mini ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
         {/* Bottom user section */}
-        <div className={cn('p-3 border-t border-white/5', mini && 'flex justify-center')}>
+        <div className={cn('p-3 border-t border-sidebar-border', mini && 'flex justify-center')}>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <button className={cn(
-                'flex items-center gap-2.5 rounded-lg p-2 w-full hover:bg-white/5 transition-colors group',
+                'flex items-center gap-2.5 rounded-lg p-2 w-full hover:bg-sidebar-accent/50 transition-colors group',
                 mini && 'justify-center'
               )}>
-                <Avatar.Root className="h-8 w-8 overflow-hidden rounded-lg shrink-0 border border-white/10">
+                <Avatar.Root className="h-8 w-8 overflow-hidden rounded-lg shrink-0 border border-sidebar-border">
                   {avatarUrl ? (
                     <Avatar.Image className="h-full w-full object-cover" src={avatarUrl} alt="Profile" />
                   ) : null}
@@ -156,8 +156,8 @@ export function AppShell({
                 </Avatar.Root>
                 {!mini && (
                   <div className="flex flex-col items-start text-left leading-none min-w-0">
-                    <span className="text-xs text-white/70 truncate max-w-[130px]">{name || 'Guest'}</span>
-                    <span className="text-[9px] font-mono uppercase tracking-wider text-white/25">{role}</span>
+                    <span className="text-xs text-sidebar-foreground/80 truncate max-w-[130px]">{name || 'Guest'}</span>
+                    <span className="text-[9px] font-mono uppercase tracking-wider text-sidebar-foreground/50">{role}</span>
                   </div>
                 )}
               </button>
@@ -165,23 +165,23 @@ export function AppShell({
             <DropdownMenu.Content
               side="right"
               align="end"
-              className="ml-2 w-52 rounded-xl border border-white/10 bg-[#0d0d18] p-1.5 shadow-2xl backdrop-blur animate-in fade-in zoom-in-95 duration-150"
+              className="ml-2 w-52 rounded-xl border border-border bg-card text-card-foreground p-1.5 shadow-2xl backdrop-blur animate-in fade-in zoom-in-95 duration-150"
             >
-              <div className="px-3 py-2.5 border-b border-white/5 mb-1">
-                <p className="text-[9px] font-mono uppercase tracking-widest text-white/25 mb-1">Signed in as</p>
-                <p className="text-sm text-white truncate">{name || 'Guest User'}</p>
+              <div className="px-3 py-2.5 border-b border-border mb-1">
+                <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Signed in as</p>
+                <p className="text-sm text-foreground truncate">{name || 'Guest User'}</p>
               </div>
               <DropdownMenu.Item asChild>
-                <Link href={roleHome[role]} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white/55 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                <Link href={roleHome[role]} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer">
                   <LayoutDashboard className="h-3.5 w-3.5" /> Home
                 </Link>
               </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
-                <Link href="/settings" className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-white/55 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                <Link href="/settings" className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer">
                   <Settings className="h-3.5 w-3.5" /> Settings
                 </Link>
               </DropdownMenu.Item>
-              <div className="h-px bg-white/5 my-1" />
+              <div className="h-px bg-border my-1" />
               <DropdownMenu.Item asChild>
                 <button
                   className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-colors"
@@ -201,13 +201,13 @@ export function AppShell({
       {/* ── MAIN CONTENT ─────────────────────────────────────────────────────── */}
       <div className={cn('transition-all duration-300 min-h-screen flex flex-col', mini ? 'lg:pl-[72px]' : 'lg:pl-64')}>
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b border-white/5 bg-[#050508]/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between px-8">
             <div>
-              <h1 className="text-lg font-light text-white tracking-tight">{title}</h1>
+              <h1 className="text-lg font-light text-foreground tracking-tight">{title}</h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-mono text-[9px] tracking-[0.2em] text-white/20 uppercase">Live</span>
+                <span className="font-mono text-[9px] tracking-[0.2em] text-muted-foreground uppercase">Live</span>
               </div>
             </div>
           </div>
