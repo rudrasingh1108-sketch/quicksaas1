@@ -77,8 +77,8 @@ export async function GET(request: NextRequest) {
     .eq('module_status', 'queued')
     .is('deleted_at', null)
     .is('assigned_freelancer_id', null)
-    .order('created_at', { ascending: true })
-    .limit(10);
+    .order('created_at', { ascending: false })
+    .limit(50);
 
   return NextResponse.json({
     modules: result,
