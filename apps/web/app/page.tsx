@@ -2,57 +2,128 @@
 
 import Link from 'next/link';
 import { ArrowRight, RotateCcw, EyeOff, Activity } from 'lucide-react';
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring, useMotionValueEvent } from 'framer-motion';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { motion, useScroll, useTransform, useInView, useSpring, useVelocity, useAnimationFrame } from 'framer-motion';
 
-// ── ANIMATED CANVAS (network nodes) ──────────────────────────────────────────
-function NetworkCanvas() {
+// ── VIDEO SCROLL CANVAS (frames) ─────────────────────────────────────────────
+function VideoScrollCanvas({ scrollY, isLocked }: { scrollY: any, isLocked: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef = useRef<number>(0);
+  const imagesRef = useRef<HTMLImageElement[]>([]);
+  const frameRef = useRef(0);
+  // A simple boost value (0..1) that decays each frame — no accumulation
+  const boostRef = useRef(0);
 
   useEffect(() => {
+    const urls = Array.from({ length: 150 }, (_, i) => {
+      const num = String(i + 1).padStart(3, '0');
+      return `/frames/ezgif-frame-${num}.jpg`;
+    });
+    urls.forEach((url, i) => {
+      const img = new Image();
+      img.src = url;
+      imagesRef.current[i] = img;
+    });
+  }, []);
+
+  // When page scrolls (unlocked phase) — give a small capped boost
+  useEffect(() => {
+    let lastY = scrollY.get();
+    const unsub = scrollY.on('change', (latest: number) => {
+      const diff = Math.abs(latest - lastY);
+      lastY = latest;
+      // boost is capped at 3 (triple speed max), NOT accumulated
+      boostRef.current = Math.min(3, diff * 0.05);
+    });
+    return () => unsub();
+  }, [scrollY]);
+
+  // When page is locked — mouse wheel gives a small capped boost
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      if (isLocked) {
+        boostRef.current = Math.min(3, Math.abs(e.deltaY) * 0.01);
+      }
+    };
+    window.addEventListener('wheel', onWheel, { passive: true });
+    return () => window.removeEventListener('wheel', onWheel);
+  }, [isLocked]);
+
+  const drawFrame = useCallback((frameIndex: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    let W = canvas.offsetWidth;
-    let H = canvas.offsetHeight;
-    canvas.width = W; canvas.height = H;
-
-    type Node = { x: number; y: number; vx: number; vy: number; r: number; pulse: number };
-    const nodes: Node[] = Array.from({ length: 50 }, () => ({
-      x: Math.random() * W, y: Math.random() * H,
-      vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
-      r: Math.random() * 1.8 + 0.8, pulse: Math.random() * Math.PI * 2,
-    }));
-
-    const BASE = '16, 185, 129';
-
-    const draw = () => {
-      W = canvas.offsetWidth; H = canvas.offsetHeight;
-      if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+    const img = imagesRef.current[frameIndex];
+    if (img && img.complete && img.naturalWidth > 0) {
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      if (canvas.width !== W || canvas.height !== H) {
+        canvas.width = W;
+        canvas.height = H;
+      }
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      const canvasRatio = W / H;
+      let drawW, drawH, drawX, drawY;
+      if (canvasRatio > imgRatio) {
+        drawW = W; drawH = W / imgRatio; drawX = 0; drawY = (H - drawH) / 2;
+      } else {
+        drawH = H; drawW = H * imgRatio; drawX = (W - drawW) / 2; drawY = 0;
+      }
       ctx.clearRect(0, 0, W, H);
-      nodes.forEach(n => {
-        n.x += n.vx; n.y += n.vy; n.pulse += 0.016;
-        if (n.x < 0 || n.x > W) n.vx *= -1; if (n.y < 0 || n.y > H) n.vy *= -1;
-      });
-      for (let i = 0; i < nodes.length; i++)
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < 170) { ctx.beginPath(); ctx.strokeStyle = `rgba(${BASE},${(1 - d / 170) * 0.2})`; ctx.lineWidth = 0.6; ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke(); }
-        }
-      nodes.forEach(n => { const g = (Math.sin(n.pulse) + 1) / 2; ctx.beginPath(); ctx.arc(n.x, n.y, n.r + g, 0, Math.PI * 2); ctx.fillStyle = `rgba(${BASE},${0.4 + g * 0.5})`; ctx.fill(); });
-      animRef.current = requestAnimationFrame(draw);
-    };
-    animRef.current = requestAnimationFrame(draw);
-    const onResize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
-    window.addEventListener('resize', onResize);
-    return () => { cancelAnimationFrame(animRef.current); window.removeEventListener('resize', onResize); };
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    }
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
+  useAnimationFrame((_, delta) => {
+    // Clamp delta — avoid huge jumps on tab switch or low fps
+    const dt = Math.min(delta, 50) / 1000;
+    const base = 15 * dt;
+    const boost = boostRef.current * 15 * dt;
+    boostRef.current *= 0.75; // decays fast — gone in ~10 frames
+    frameRef.current = (frameRef.current + base + boost) % 150;
+    drawFrame(Math.floor(frameRef.current));
+  });
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-65" />;
+}
+
+// ── PARTICLE EXPLOSION COMPONENT ─────────────────────────────────────────────
+function ParticleExplosion({ progress }: { progress: any }) {
+  const particles = useMemo(() => Array.from({ length: 80 }, () => {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.random() * 800 + 100;
+    return {
+      x: Math.cos(angle) * distance,
+      y: Math.sin(angle) * distance,
+      size: Math.random() * 8 + 2,
+      rotation: Math.random() * 360,
+      color: ['bg-white', 'bg-emerald-400', 'bg-white/50'][Math.floor(Math.random() * 3)]
+    };
+  }), []);
+
+  const opacity = useTransform(progress, [0, 0.1, 0.8, 1], [0, 1, 1, 0]);
+  
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+      {particles.map((p, i) => {
+        const x = useTransform(progress, [0, 1], [0, p.x]);
+        const y = useTransform(progress, [0, 1], [0, p.y + (Math.random() * 200)]); // adding some gravity/parallax down
+        const scale = useTransform(progress, [0, 1], [0, 1.5]);
+        const rotate = useTransform(progress, [0, 1], [0, p.rotation]);
+        return (
+          <motion.div
+            key={i}
+            className={`absolute ${p.color} rounded-sm mix-blend-screen shadow-[0_0_15px_rgba(255,255,255,0.4)]`}
+            style={{
+              width: p.size,
+              height: p.size,
+              x, y, scale, rotate, opacity
+            }}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 // ── LIVE TICKER ───────────────────────────────────────────────────────────────
@@ -217,121 +288,159 @@ export default function HomePage() {
     };
   }, []);
 
-  const { scrollYProgress } = useScroll();
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
-  const heroY = useTransform(scrollYProgress, [0, 0.15], ['0px', '-60px']);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll();
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"]
+  });
+
+  // Parallax float mapping
+  const parallaxY = useTransform(heroProgress, [0, 1], [0, 400]);
+
+  // Poof explosion progress (happens quickly in the first 5% to 30% of scroll)
+  const poofProgress = useTransform(heroProgress, [0.05, 0.3], [0, 1]);
+  const mainOpacity = useTransform(poofProgress, [0, 0.2], [1, 0]);
+  const mainScale = useTransform(poofProgress, [0, 0.4], [1, 3]);
+  const mainFilter = useTransform(poofProgress, [0, 0.4], ['blur(0px)', 'blur(30px)']);
+  
+  const [isReady, setIsReady] = useState(false);
+  const [isLocked, setIsLocked] = useState(true);
+
+  useEffect(() => {
+    // 1. Lock scroll on entry
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+    // 2. Wait 3.5s, then initiate text fade in
+    const timer1 = setTimeout(() => {
+      setIsReady(true);
+    }, 3500);
+
+    // 3. Wait exact time for text fade in (1s), then smoothly unlock native scrolling
+    const timer2 = setTimeout(() => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      setIsLocked(false);
+    }, 4500);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, []);
 
   return (
     <main className="relative bg-[#050508] text-white overflow-hidden font-sans selection:bg-emerald-500/30">
 
       {/* ════ 1. HERO — dark, cinematic ═══════════════════════════════════════ */}
-      <section className="relative h-[110vh] w-full flex items-center justify-center overflow-hidden">
-        {/* Network canvas */}
-        <div className="absolute inset-0">
-          <NetworkCanvas />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#050508]/55 via-[#050508]/15 to-[#050508]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#050508]/80 via-transparent to-[#050508]/60" />
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 45% at 50% 50%, rgba(16,185,129,0.05) 0%, transparent 70%)' }} />
+      {/* Reduced height to 200vh. First 100vh plays naturally, second 100vh pulls the card up smoothly */}
+      <div ref={heroRef} className="relative h-[200vh] w-full">
+        {/* Sticky container that stays fixed while scrolling the 200vh */}
+        <div className="sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden">
+          
+          {/* Video Canvas */}
+          <div className="absolute inset-0 bg-black">
+            <VideoScrollCanvas scrollY={scrollY} isLocked={isLocked} />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#050508]/40 via-transparent to-[#050508]/70" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#050508]/60 via-transparent to-[#050508]/60" />
+            <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 45% at 50% 50%, rgba(16,185,129,0.05) 0%, transparent 60%)' }} />
+          </div>
+
+          <motion.div
+            className="relative z-20 flex flex-col items-center text-center px-6 max-w-5xl"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: isReady ? 1 : 0, y: isReady ? 0 : 40 }}
+            transition={{ duration: 1, ease: 'easeOut' }}
+            style={{ y: parallaxY }} // Parallax down
+          >
+            <ParticleExplosion progress={poofProgress} />
+
+            <motion.div 
+              style={{ opacity: mainOpacity, scale: mainScale, filter: mainFilter }}
+              className="flex flex-col items-center"
+            >
+              {/* Status pill */}
+              <div className="flex items-center gap-3 mb-10 px-5 py-2 rounded-full border border-white/10 bg-black/30 backdrop-blur-md">
+                <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+                <span className="text-[11px] font-medium tracking-[0.18em] text-white/55 uppercase">Managed Digital Factory · India</span>
+              </div>
+
+              {/* Headline — light weight, enormous, tracking tight */}
+              <h1 className="text-[clamp(52px,8vw,110px)] font-light tracking-[-0.04em] leading-[0.9] text-white">
+                Order it.<br />
+                <span className="text-white/30 italic">We'll build it.</span>
+              </h1>
+
+              {/* Sub */}
+              <p className="mt-8 text-base md:text-lg text-white/40 max-w-xl font-light tracking-wide leading-relaxed">
+                Submit your requirements. Get live progress updates.<br />
+                We handle everything behind the scenes.
+              </p>
+
+              {/* Ticker */}
+              <div className="mt-6 px-4 py-3 border border-white/8 bg-black/25 backdrop-blur rounded-lg w-full max-w-md text-left">
+                <div className="text-[9px] font-mono tracking-[0.2em] text-white/20 uppercase mb-1.5">client update feed</div>
+                <DataTicker />
+              </div>
+
+              {/* CTAs */}
+              <div className="mt-10 flex flex-col sm:flex-row gap-4">
+                <Link href="/signup">
+                  <button className="group relative px-9 py-4 bg-white text-black font-medium tracking-wide rounded-sm overflow-hidden transition-all duration-300 hover:scale-[1.02]">
+                    <span className="relative z-10 flex items-center gap-2">Submit Your Brief <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" /></span>
+                    <div className="absolute inset-0 bg-slate-100 scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100 z-0" />
+                  </button>
+                </Link>
+                <Link href="/login">
+                  <button className="px-9 py-4 bg-transparent text-white/60 font-medium tracking-wide rounded-sm border border-white/15 transition-all duration-300 hover:bg-white/5 hover:text-white hover:border-white/30">
+                    Sign In
+                  </button>
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Scroll hint — appears gracefully after scroll is unlocked */}
+          <motion.div
+            className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: !isLocked ? 1 : 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <span className="text-[10px] tracking-[0.24em] uppercase text-white/20 font-mono">Keep scrolling</span>
+            <div className="w-[1px] h-10 bg-gradient-to-b from-white/40 to-transparent" />
+          </motion.div>
+
+          {/* Global Trusted By Strip */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isReady ? 1 : 0 }}
+            transition={{ duration: 1, delay: 0.5 }}
+            className="absolute bottom-0 left-0 w-full border-t border-white/5 bg-black/40 backdrop-blur-md py-4 overflow-hidden z-20 flex flex-col items-center"
+          >
+            <div className="font-mono text-[9px] tracking-[0.3em] text-white/20 uppercase mb-3 text-center">
+              Powering Next-Gen Enterprises
+            </div>
+            <div className="flex gap-16 md:gap-32 items-center justify-center opacity-40 grayscale hover:grayscale-0 transition-all duration-700 w-full max-w-7xl px-10">
+              <div className="flex items-center gap-2"><div className="w-4 h-4 bg-white rounded-sm rotate-45"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Aura</span></div>
+              <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white rounded-full"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Nexus</span></div>
+              <div className="flex items-center gap-2 hidden md:flex"><div className="w-4 h-4 bg-white rounded-br-lg"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Stark</span></div>
+              <div className="flex items-center gap-2 hidden md:flex"><div className="w-4 h-4 border-t-2 border-l-2 border-white rounded-tl-lg"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Vanguard</span></div>
+              <div className="flex items-center gap-2"><div className="w-4 h-4 bg-white rounded-full"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Omicron</span></div>
+            </div>
+          </motion.div>
         </div>
+      </div>
 
-        <motion.div
-          className="relative z-20 flex flex-col items-center text-center px-6 max-w-5xl"
-          style={{ opacity: heroOpacity, y: heroY }}
-        >
-          {/* Status pill */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }} animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 14 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-3 mb-10 px-5 py-2 rounded-full border border-white/10 bg-black/30 backdrop-blur-md"
-          >
-            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-            <span className="text-[11px] font-medium tracking-[0.18em] text-white/55 uppercase">Managed Digital Factory · India</span>
-          </motion.div>
-
-          {/* Headline — light weight, enormous, tracking tight */}
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }} animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 24 }}
-            transition={{ duration: 1.1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[clamp(52px,8vw,110px)] font-light tracking-[-0.04em] leading-[0.9] text-white"
-          >
-            Order it.<br />
-            <span className="text-white/30 italic">We'll build it.</span>
-          </motion.h1>
-
-          {/* Sub */}
-          <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: isLoaded ? 1 : 0 }}
-            transition={{ duration: 1, delay: 0.85 }}
-            className="mt-8 text-base md:text-lg text-white/40 max-w-xl font-light tracking-wide leading-relaxed"
-          >
-            Submit your requirements. Get live progress updates.<br />
-            We handle everything behind the scenes.
-          </motion.p>
-
-          {/* Ticker */}
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: isLoaded ? 1 : 0 }}
-            transition={{ duration: 1, delay: 1.0 }}
-            className="mt-6 px-4 py-3 border border-white/8 bg-black/25 backdrop-blur rounded-lg w-full max-w-md text-left"
-          >
-            <div className="text-[9px] font-mono tracking-[0.2em] text-white/20 uppercase mb-1.5">client update feed</div>
-            <DataTicker />
-          </motion.div>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }} animate={{ opacity: isLoaded ? 1 : 0, y: isLoaded ? 0 : 14 }}
-            transition={{ duration: 0.8, delay: 1.1, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-10 flex flex-col sm:flex-row gap-4"
-          >
-            <Link href="/signup">
-              <button className="group relative px-9 py-4 bg-white text-black font-medium tracking-wide rounded-sm overflow-hidden transition-all duration-300 hover:scale-[1.02]">
-                <span className="relative z-10 flex items-center gap-2">Submit Your Brief <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" /></span>
-                <div className="absolute inset-0 bg-slate-100 scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100 z-0" />
-              </button>
-            </Link>
-            <Link href="/login">
-              <button className="px-9 py-4 bg-transparent text-white/60 font-medium tracking-wide rounded-sm border border-white/15 transition-all duration-300 hover:bg-white/5 hover:text-white hover:border-white/30">
-                Sign In
-              </button>
-            </Link>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll hint */}
-        <motion.div
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
-          initial={{ opacity: 0 }} animate={{ opacity: isLoaded ? 1 : 0 }}
-          transition={{ delay: 1.6, duration: 1 }}
-          style={{ opacity: heroOpacity }}
-        >
-          <span className="text-[10px] tracking-[0.24em] uppercase text-white/20 font-mono">Scroll to explore</span>
-          <div className="w-[1px] h-10 bg-gradient-to-b from-white/20 to-transparent" />
-        </motion.div>
-
-        {/* Global Trusted By Strip to fill the bottom empty space */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isLoaded ? 1 : 0 }}
-          transition={{ duration: 1.5, delay: 1.8 }}
-          className="absolute bottom-0 left-0 w-full border-t border-white/5 bg-black/40 backdrop-blur-md py-4 overflow-hidden z-20 flex flex-col items-center"
-        >
-          <div className="font-mono text-[9px] tracking-[0.3em] text-white/20 uppercase mb-3 text-center">
-            Powering Next-Gen Enterprises
-          </div>
-          <div className="flex gap-16 md:gap-32 items-center justify-center opacity-40 grayscale hover:grayscale-0 transition-all duration-700 w-full max-w-7xl px-10">
-            {/* Abstract geometric logos to represent clients */}
-            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-white rounded-sm rotate-45"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Aura</span></div>
-            <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white rounded-full"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Nexus</span></div>
-            <div className="flex items-center gap-2 hidden md:flex"><div className="w-4 h-4 bg-white rounded-br-lg"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Stark</span></div>
-            <div className="flex items-center gap-2 hidden md:flex"><div className="w-4 h-4 border-t-2 border-l-2 border-white rounded-tl-lg"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Vanguard</span></div>
-            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-white rounded-full"></div><span className="text-white font-bold tracking-widest text-xs uppercase">Omicron</span></div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ════ 2. "IMAGINE" — light section, giant scroll-reveal text ══════════ */}
-      <section className="relative bg-[#f0f1f4] py-24 md:py-32 px-6 md:px-20">
+      {/* ════ 2. "IMAGINE" — Transition wipe and standard section ═══════════════ */}
+      {/* Overlaps the sticky 300vh section by exactly 100vh so that it scrolls over the hero smoothly */}
+      <div className="relative z-40" style={{ marginTop: "-100vh" }}>
+        
+        <section className="relative bg-[#f0f1f4] py-24 md:py-32 px-6 md:px-20 min-h-screen rounded-t-[40px] shadow-[0_-20px_50px_rgba(0,0,0,0.3)] border-t border-white/20">
         {/* Eyebrow */}
         <div className="flex items-center gap-3 mb-16 text-[#0d1a2e]/40">
           <div className="w-6 h-[1px] bg-current" />
@@ -365,6 +474,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      </div>
 
       {/* ════ 3. STICKY "HOW IT WORKS" — pinned panel ════════════════════════ */}
       <section className="relative bg-[#050508]">
