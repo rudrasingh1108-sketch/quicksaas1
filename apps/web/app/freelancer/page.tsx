@@ -116,7 +116,8 @@ export default function FreelancerDashboard() {
                   <Card key={module.id} className="p-4 border-emerald-500/20 bg-background/50 hover:border-emerald-500/50 transition-colors">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <p className="font-medium">{module.module_name}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mb-1">{module.projects?.title || 'Unknown Project'}</p>
+                        <p className="font-bold tracking-tight">{module.module_name}</p>
                         <p className="text-xs text-muted-foreground mt-1">Budget: ₹{Math.round((module.projects?.total_price || 0) * module.module_weight)}</p>
                       </div>
                       <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-none">NEW</Badge>

@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
   const queuedModules = await supabase
     .from('project_modules')
-    .select('id, project_id, module_key, module_name, module_status, due_at, updated_at, module_weight, projects(total_price)')
+    .select('id, project_id, module_key, module_name, module_status, due_at, updated_at, module_weight, projects(title, total_price)')
     .eq('module_status', 'queued')
     .is('deleted_at', null)
     .is('assigned_freelancer_id', null)
