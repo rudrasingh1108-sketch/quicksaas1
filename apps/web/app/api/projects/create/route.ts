@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     await supabase.from('project_intake').upsert({ project_id: projectInsert.data.id, intake }, { onConflict: 'project_id' });
 
-    const modulesPayload = planModulesForProject(projectInsert.data.id, structured);
+    const modulesPayload = planModulesForProject(projectInsert.data.id, structured, projectInsert.data.total_price);
     const modulesInsert = await supabase
       .from('project_modules')
       .insert(modulesPayload)

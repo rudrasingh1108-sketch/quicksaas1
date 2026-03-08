@@ -7,7 +7,7 @@ export interface PlannedModule {
   definition_of_done: Record<string, unknown>;
 }
 
-export function planModulesForProject(projectId: string, structured: any): Array<Record<string, any>> {
+export function planModulesForProject(projectId: string, structured: any, totalPrice: number): Array<Record<string, any>> {
   const base = [
     {
       project_id: projectId,
@@ -15,6 +15,7 @@ export function planModulesForProject(projectId: string, structured: any): Array
       module_name: 'Frontend',
       module_type: 'frontend',
       module_weight: 0.25,
+      budget_inr: Math.round(totalPrice * 0.25),
       required_skills_vector: { react: 0.9, ui: 0.8 },
       module_status: 'queued',
       definition_of_done: { checklist: ['Client UI', 'Auth', 'Dashboards'] },
@@ -25,6 +26,7 @@ export function planModulesForProject(projectId: string, structured: any): Array
       module_name: 'Backend',
       module_type: 'backend',
       module_weight: 0.35,
+      budget_inr: Math.round(totalPrice * 0.35),
       required_skills_vector: { node: 0.9, postgres: 0.8, rls: 0.8 },
       module_status: 'queued',
       definition_of_done: { checklist: ['APIs', 'RLS', 'Realtime'] },
@@ -35,6 +37,7 @@ export function planModulesForProject(projectId: string, structured: any): Array
       module_name: 'Integrations',
       module_type: 'integrations',
       module_weight: 0.25,
+      budget_inr: Math.round(totalPrice * 0.25),
       required_skills_vector: { integrations: 0.8, webhooks: 0.6 },
       module_status: 'queued',
       definition_of_done: { integrations: structured.integrations ?? [] },
@@ -45,6 +48,7 @@ export function planModulesForProject(projectId: string, structured: any): Array
       module_name: 'Deployment',
       module_type: 'deployment',
       module_weight: 0.15,
+      budget_inr: Math.round(totalPrice * 0.15),
       required_skills_vector: { devops: 0.7, deployment: 0.9 },
       module_status: 'queued',
       definition_of_done: { checklist: ['AiroBuilder deployment URL', 'Handover notes'] },

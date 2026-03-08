@@ -92,55 +92,87 @@ export default function FreelancerDashboard() {
     { label: 'Completion Rate', value: profile?.total_modules_completed ? `${Math.round((profile.total_modules_completed / (profile.total_modules_completed + (profile.total_modules_failed || 0))) * 100)}%` : '-' },
   ];
 
+  const groupedAvailable = useMemo(() => {
+    const groups: Record<string, { title: string, modules: any[] }> = {};
+    available.forEach(m => {
+      const pId = m.project_id;
+      if (!groups[pId]) {
+        groups[pId] = { title: m.projects?.title || 'Unknown Project', modules: [] };
+      }
+      groups[pId].modules.push(m);
+    });
+    return Object.entries(groups);
+  }, [available]);
+
   return (
     <AppShell role="freelancer" title="Freelancer Workspace">
       {loading ? (
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-4"><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
+          <div className="grid gap-4 md:grid-cols-4">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+          </div>
           <Skeleton className="h-64 w-full" />
         </div>
       ) : !profile ? (
         <FreelancerOnboarding />
       ) : (
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{cards.map((card) => <Card key={card.label} className="p-5"><p className="text-sm text-muted-foreground">{card.label}</p><p className="mt-1 text-2xl font-semibold">{card.value}</p></Card>)}</div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {cards.map((card) => (
+              <Card key={card.label} className="p-5 border-border/50 bg-background/50">
+                <p className="text-sm text-muted-foreground font-medium">{card.label}</p>
+                <p className="mt-1 text-2xl font-bold tracking-tight">{card.value}</p>
+              </Card>
+            ))}
+          </div>
 
           {available.length > 0 && (
-            <Card className="p-5 border-emerald-500/30 bg-emerald-500/5">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-emerald-400" />
-                <p className="text-lg font-semibold text-emerald-400">Available to Claim</p>
+                <h2 className="text-lg font-bold tracking-tight">Available Tasks</h2>
               </div>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {available.map((module) => (
-                  <Card key={module.id} className="p-4 border-emerald-500/20 bg-background/50 hover:border-emerald-500/50 transition-colors">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60 mb-1">{module.projects?.title || 'Unknown Project'}</p>
-                        <p className="font-bold tracking-tight">{module.module_name}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Budget: ₹{Math.round((module.projects?.total_price || 0) * module.module_weight)}</p>
-                      </div>
-                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-none">NEW</Badge>
+
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {groupedAvailable.map(([pId, project]) => (
+                  <Card key={pId} className="p-5 border-emerald-500/20 bg-emerald-500/5 flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-emerald-500/10 pb-3">
+                      <h3 className="font-bold text-emerald-500 uppercase tracking-widest text-xs">{project.title}</h3>
+                      <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-500 border-none">{project.modules.length} TASKS</Badge>
                     </div>
-                    <button
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-md font-medium text-sm transition-colors"
-                      onClick={async () => {
-                        try {
-                          const { data: { session } } = await supabase.auth.getSession();
-                          await fetch(`/api/freelancer/modules/${module.id}/claim`, {
-                            method: 'POST',
-                            headers: { Authorization: `Bearer ${session?.access_token}` }
-                          });
-                          load();
-                        } catch (e) { console.error(e); }
-                      }}
-                    >
-                      Accept Assignment
-                    </button>
+
+                    <div className="space-y-3">
+                      {project.modules.map((module: any) => (
+                        <div key={module.id} className="p-3 rounded-lg bg-background/40 border border-emerald-500/10 hover:border-emerald-500/30 transition-all group">
+                          <div className="flex justify-between items-start mb-2">
+                            <p className="font-semibold text-sm">{module.module_name}</p>
+                            <span className="text-emerald-500 font-bold text-sm">₹{module.budget_inr?.toLocaleString() || '0'}</span>
+                          </div>
+                          <button
+                            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-1.5 rounded-md font-bold text-xs transition-colors shadow-sm shadow-emerald-500/20"
+                            onClick={async () => {
+                              try {
+                                const { data: { session } } = await supabase.auth.getSession();
+                                await fetch(`/api/freelancer/modules/${module.id}/claim`, {
+                                  method: 'POST',
+                                  headers: { Authorization: `Bearer ${session?.access_token}` }
+                                });
+                                load();
+                              } catch (e) { console.error(e); }
+                            }}
+                          >
+                            Claim Task
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </Card>
                 ))}
               </div>
-            </Card>
+            </div>
           )}
 
           <div className="grid gap-6 lg:grid-cols-3">
@@ -228,6 +260,6 @@ export default function FreelancerDashboard() {
           </div>
         </div>
       )}
-    </AppShell >
+    </AppShell>
   );
 }

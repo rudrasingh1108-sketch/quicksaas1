@@ -86,7 +86,7 @@ create table if not exists public.project_modules (
   completed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  deleted_at timestamptz,
+  budget_inr numeric(14,2) not null default 0,
   unique(project_id, module_key)
 );
 
