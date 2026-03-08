@@ -87,3 +87,58 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    if (!isUuid(params.id)) {
+      return NextResponse.json({ error: 'Invalid project id' }, { status: 400 });
+    }
+
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const supabase = createSupabaseServiceClient();
+    const userRes = await supabase.auth.getUser(token);
+    if (!userRes.data.user) return NextResponse.json({ error: 'Invalid session token' }, { status: 401 });
+
+    const { data: actor } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('auth_user_id', userRes.data.user.id)
+      .maybeSingle();
+
+    if (!actor || actor.role !== 'client') {
+      return NextResponse.json({ error: 'Forbidden. Only clients can delete projects.' }, { status: 403 });
+    }
+
+    // Verify ownership
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('id', params.id)
+      .eq('client_id', actor.id)
+      .maybeSingle();
+
+    if (!project) return NextResponse.json({ error: 'Project not found or unauthorized' }, { status: 404 });
+
+    const now = new Date().toISOString();
+
+    // Soft delete modules first
+    await supabase
+      .from('project_modules')
+      .update({ deleted_at: now })
+      .eq('project_id', params.id);
+
+    // Soft delete project
+    const { error: deleteError } = await supabase
+      .from('projects')
+      .update({ deleted_at: now, status: 'cancelled' })
+      .eq('id', params.id);
+
+    if (deleteError) throw deleteError;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 });
+  }
+}

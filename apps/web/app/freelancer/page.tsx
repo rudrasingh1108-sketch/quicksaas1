@@ -174,7 +174,7 @@ export default function FreelancerDashboard() {
                                 <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                                   <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: module.module_status === 'completed' ? '100%' : '20%' }}
+                                    animate={{ width: module.module_status === 'completed' ? '100%' : '0%' }}
                                     className="h-full bg-emerald-500"
                                   />
                                 </div>

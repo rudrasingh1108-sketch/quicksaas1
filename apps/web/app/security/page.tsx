@@ -72,32 +72,18 @@ export default function SecurityPage() {
 
         <Card className="p-8 bg-white border-border shadow-md">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-black text-primary uppercase tracking-tight italic">Security Audit Checklist</h3>
+            <h3 className="text-xl font-black text-primary uppercase tracking-tight italic">Security Audit Logs</h3>
             <Badge variant="outline" className="text-[10px] font-black uppercase border-emerald-500/30 text-emerald-600 bg-emerald-50">HEARTBEAT ACTIVE</Badge>
           </div>
 
-          <div className="grid gap-4">
-            {[
-              { title: 'API Key Rotation', status: 'PASS', date: 'Monthly Rotation Active', desc: 'Neural keys synchronized across all edge nodes.' },
-              { title: 'RLS Policy Status', status: 'PASS', date: 'ENFORCED', desc: 'Neural-linked Row Level Security is active on all production schemas.', variant: 'success' },
-              { title: 'Data Anonymization', status: 'PASS', date: 'Proxy Active', desc: 'Client-freelancer interactions proxied through secure relay.' },
-            ].map((item, i) => (
-              <div key={i} className="rounded-2xl border border-gray-100 p-6 bg-gray-50/30 hover:bg-gray-50 transition-colors group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-2 w-2 rounded-full ${item.variant === 'warn' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                    <p className="text-lg font-black text-primary italic uppercase tracking-tight">{item.title}</p>
-                  </div>
-                  <Badge className={`border-none font-black text-[9px] ${item.variant === 'warn' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                    {item.status}
-                  </Badge>
-                </div>
-                <div className="ml-6">
-                  <p className="text-xs font-mono text-muted-foreground uppercase mb-2">{item.date}</p>
-                  <p className="text-sm text-gray-600 font-medium">{item.desc}</p>
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+            <div className="h-16 w-16 rounded-full bg-slate-50 flex items-center justify-center">
+              <ShieldCheck className="w-8 h-8 text-slate-300" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-tight">No active security alerts</p>
+              <p className="text-xs text-slate-400 mt-1">Your neural-linked infrastructure is currently operating within safety parameters.</p>
+            </div>
           </div>
         </Card>
       </div>
