@@ -12,7 +12,7 @@ import { Button } from '../../../components/ui/button';
 import { ProjectChat } from '../../../components/project/project-chat';
 import { AIProgressEngine } from '@services/ai-progress-engine';
 
-interface ModuleItem { id: string; module_name: string; module_status: string; module_weight: number; assigned_freelancer_id?: string; due_at?: string; freelancer?: { full_name: string } }
+interface ModuleItem { id: string; module_name: string; module_status: string; module_weight: number; budget_inr: number; assigned_freelancer_id?: string; due_at?: string; freelancer?: { full_name: string } }
 interface SessionItem { id: string; module_id: string; deployment_url: string; build_url: string; session_status: string; }
 interface ProgressLog { id: string; module_id: string; public_summary: string; percent_delta: number; created_at: string; }
 interface Snapshot { id: string; module_id: string; public_summary: string; created_at: string; }
@@ -131,7 +131,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                         <div className="flex flex-col items-end gap-2">
                           <Badge>{module.module_status}</Badge>
                           <div className="text-xs text-muted-foreground whitespace-nowrap">
-                            Budget: <span className="font-medium">₹{Math.round(project?.total_price * module.module_weight)}</span>
+                            Budget: <span className="font-medium">₹{module.budget_inr?.toLocaleString() || Math.round(project?.total_price * module.module_weight).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>

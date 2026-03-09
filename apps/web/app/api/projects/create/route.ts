@@ -65,10 +65,20 @@ export async function POST(request: NextRequest) {
 
     // Prioritize manual budget sum for total_price
     let finalTotalPrice = pricing.total;
+    let finalPricingBreakdown = { ...pricing };
+
     if (body.budgets) {
       const budgetSum = Object.values(body.budgets).reduce((acc, val) => acc + (Number(val) || 0), 0);
       if (budgetSum > 0) {
         finalTotalPrice = budgetSum;
+        // Adjust the breakdown to match the manual total for consistency
+        // We'll keep the other factors but scale the 'base' to make it sum up to finalTotalPrice
+        const otherFactors = (pricing.urgency || 0) + (pricing.resourceLoad || 0) + (pricing.integration || 0) + (pricing.surge || 0);
+        finalPricingBreakdown = {
+          ...pricing,
+          base: Math.max(0, finalTotalPrice - otherFactors),
+          total: finalTotalPrice
+        };
       }
     }
 
@@ -82,7 +92,7 @@ export async function POST(request: NextRequest) {
         gml_spec: gml,
         sla_policy: { shifts: ['A', 'B', 'C'], timezone: 'Asia/Kolkata' },
         complexity_score: structured.complexityScore,
-        pricing_breakdown: pricing,
+        pricing_breakdown: finalPricingBreakdown,
         urgency: structured.urgency,
         total_price: finalTotalPrice,
         status: 'active',

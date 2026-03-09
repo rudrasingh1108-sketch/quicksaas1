@@ -32,83 +32,83 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-[#050508] flex items-center justify-center px-4 py-16 overflow-hidden font-sans">
+    <main className="relative min-h-screen bg-[#080705] flex items-center justify-center px-4 py-16 overflow-hidden font-sans selection:bg-primary/30">
       {/* Ambient glow */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 40%, rgba(16,185,129,0.05) 0%, transparent 70%)' }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 40%, rgba(154,123,79,0.05) 0%, transparent 70%)' }} />
 
       {/* Back to landing */}
       <Link href="/" className="absolute top-8 left-8 font-mono text-[11px] tracking-[0.2em] uppercase text-white/25 hover:text-white/60 transition-colors">
-        ← Gigzs
+        ← GIGZS
       </Link>
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Header */}
         <div className="mb-10 text-center">
-          <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full border border-white/8 bg-white/3 backdrop-blur">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-            <span className="font-mono text-[10px] tracking-[0.18em] text-white/40 uppercase">Create Your Account</span>
+          <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-sm">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(154,123,79,0.5)]" />
+            <span className="font-mono text-[10px] tracking-[0.18em] text-white/40 uppercase">Registration</span>
           </div>
-          <h1 className="text-3xl font-light tracking-tight text-white mb-2">Start your project.</h1>
-          <p className="text-white/35 font-light text-sm">Define what you need. We handle everything else.</p>
+          <h1 className="text-3xl font-light tracking-tight text-white mb-2 underline decoration-primary/30 underline-offset-8">Start your project.</h1>
+          <p className="text-white/35 font-light text-sm mt-4">Define what you need. We handle everything else.</p>
         </div>
 
         {/* Role toggle */}
-        <div className="mb-6 flex border border-white/8 rounded-sm overflow-hidden">
+        <div className="mb-6 flex border border-white/5 rounded-sm overflow-hidden bg-white/[0.01]">
           {(['client', 'freelancer'] as const).map(r => (
             <button
               key={r}
               type="button"
               onClick={() => setRole(r)}
-              className={`flex-1 py-2.5 text-xs font-mono tracking-widest uppercase transition-all duration-200 ${role === r
-                ? 'bg-white text-black'
-                : 'bg-transparent text-white/30 hover:text-white/50'
+              className={`flex-1 py-3 text-[10px] font-mono tracking-[0.2em] uppercase transition-all duration-300 ${role === r
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-transparent text-white/20 hover:text-white/40'
                 }`}
             >
-              {r === 'client' ? 'I need work done' : 'I do the work'}
+              {r === 'client' ? 'Client' : 'Freelancer'}
             </button>
           ))}
         </div>
 
         {/* Form card */}
-        <div className="border border-white/8 bg-[#0a0a12] rounded-xl p-8">
-          <form className="space-y-5" onSubmit={onSubmit}>
-            <div className="space-y-1.5">
-              <label className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/35">Full name</label>
+        <div className="border border-white/5 bg-white/[0.01] backdrop-blur-md rounded-sm p-8 shadow-2xl">
+          <form className="space-y-6" onSubmit={onSubmit}>
+            <div className="space-y-2">
+              <label className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/30 ml-1">Identity</label>
               <input
                 required
-                className="w-full bg-[#0d0d18] border border-white/8 rounded-sm px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
-                placeholder="Your full name"
+                className="w-full bg-white/[0.02] border border-white/10 rounded-sm px-4 py-3.5 text-sm text-white placeholder-white/10 focus:outline-none focus:border-primary/50 transition-all duration-300"
+                placeholder="Full name"
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/35">Work email</label>
+            <div className="space-y-2">
+              <label className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/30 ml-1">Access Channel</label>
               <input
                 type="email"
                 required
-                className="w-full bg-[#0d0d18] border border-white/8 rounded-sm px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
-                placeholder="you@company.com"
+                className="w-full bg-white/[0.02] border border-white/10 rounded-sm px-4 py-3.5 text-sm text-white placeholder-white/10 focus:outline-none focus:border-primary/50 transition-all duration-300"
+                placeholder="Email address"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/35">Password</label>
+            <div className="space-y-2">
+              <label className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/30 ml-1">Secure Key</label>
               <input
                 type="password"
                 required
-                className="w-full bg-[#0d0d18] border border-white/8 rounded-sm px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all duration-200"
-                placeholder="Create a strong password"
+                className="w-full bg-white/[0.02] border border-white/10 rounded-sm px-4 py-3.5 text-sm text-white placeholder-white/10 focus:outline-none focus:border-primary/50 transition-all duration-300"
+                placeholder="Password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
             </div>
 
             {error && (
-              <p className="text-xs text-red-400/80 font-mono border border-red-500/20 bg-red-500/5 rounded px-3 py-2">
+              <p className="text-[10px] text-red-400/60 font-mono border border-red-500/10 bg-red-500/[0.02] rounded-sm px-4 py-3 uppercase tracking-wider">
                 {error}
               </p>
             )}
@@ -116,27 +116,26 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group w-full mt-2 relative py-3.5 bg-white text-black text-sm font-medium tracking-wide rounded-sm overflow-hidden transition-all duration-300 hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group w-full mt-4 relative py-4 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-[0.3em] rounded-sm overflow-hidden transition-all duration-500 hover:scale-[1.01] disabled:opacity-50"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                {loading ? 'Creating…' : (<>Create account <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" /></>)}
+                {loading ? 'CALIBRATING…' : (<>Initialize account <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" /></>)}
               </span>
-              <div className="absolute inset-0 bg-slate-100 scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300 z-0" />
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-white/5 text-center">
-            <p className="text-white/25 text-xs font-mono">
-              Have an account?{' '}
-              <Link href="/login" className="text-emerald-400/80 hover:text-emerald-400 transition-colors">
-                Sign in →
+          <div className="mt-8 pt-6 border-t border-white/5 text-center">
+            <p className="text-white/20 text-[10px] font-mono uppercase tracking-widest">
+              Existing link?{' '}
+              <Link href="/login" className="text-primary hover:text-primary/80 transition-colors border-b border-primary/20 pb-0.5">
+                Sign in
               </Link>
             </p>
           </div>
         </div>
 
-        <p className="text-center text-white/15 font-mono text-[10px] tracking-widest mt-6 uppercase">
-          Gigzs · Managed Digital Factory
+        <p className="text-center text-white/10 font-mono text-[9px] tracking-[0.5em] mt-8 uppercase">
+          Gigzs · Neural Factory
         </p>
       </div>
     </main>

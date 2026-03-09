@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/badge';
 import { Sparkles } from 'lucide-react';
 import { useToast } from '../../lib/hooks/use-toast';
 import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
+import { cn } from '../../lib/utils';
 
 const PRODUCT_TYPES = ['web_app', 'mobile_app', 'website', 'platform'] as const;
 const URGENCY_LEVELS = ['low', 'medium', 'high'] as const;
@@ -96,36 +97,35 @@ export default function IntakeForm({ onCancel }: { onCancel?: () => void }) {
   };
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col h-full bg-background relative">
-      <div className="absolute top-0 right-0 bg-red-500 text-white text-[8px] px-1 z-50">V2.0-BUDGETS-LIVE</div>
-      <div className="flex-1 overflow-y-auto pr-2 space-y-8 max-h-[70vh] custom-scrollbar pb-10">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Operation Title</label>
+    <form onSubmit={onSubmit} className="flex flex-col h-full bg-background relative selection:bg-primary/30">
+      <div className="flex-1 overflow-y-auto pr-2 space-y-12 max-h-[75vh] custom-scrollbar pb-10">
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <label className="text-[10px] font-mono tracking-[0.3em] text-muted-foreground/60 uppercase ml-1">Project Identifier</label>
             <input
-              className="w-full rounded-xl border border-border/50 bg-background/50 p-4 text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all placeholder:text-muted-foreground/30"
-              placeholder="e.g. Project 'Phoenix' SaaS"
+              className="w-full rounded-sm border border-border bg-muted/5 p-5 text-xl font-light tracking-tight focus:border-primary outline-none transition-all placeholder:text-muted-foreground/20"
+              placeholder="Assign a title to this vector..."
               value={title}
               onChange={e => setTitle(e.target.value)}
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Vector Type</label>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <label className="text-[10px] font-mono tracking-[0.3em] text-muted-foreground/60 uppercase ml-1">Product Archetype</label>
               <select
-                className="w-full rounded-xl border border-border/50 bg-background/50 p-3.5 font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none cursor-pointer"
+                className="w-full rounded-sm border border-border bg-muted/5 p-4 text-sm font-light focus:border-primary outline-none appearance-none cursor-pointer"
                 value={productType}
                 onChange={e => setProductType(e.target.value as any)}
               >
                 {PRODUCT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ').toUpperCase()}</option>)}
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Priority</label>
+            <div className="space-y-3">
+              <label className="text-[10px] font-mono tracking-[0.3em] text-muted-foreground/60 uppercase ml-1">Priority Matrix</label>
               <select
-                className="w-full rounded-xl border border-border/50 bg-background/50 p-3.5 font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none appearance-none cursor-pointer"
+                className="w-full rounded-sm border border-border bg-muted/5 p-4 text-sm font-light focus:border-primary outline-none appearance-none cursor-pointer"
                 value={urgency}
                 onChange={e => setUrgency(e.target.value as any)}
               >
@@ -134,62 +134,67 @@ export default function IntakeForm({ onCancel }: { onCancel?: () => void }) {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Operational Modules</label>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-4">
+            <label className="text-[10px] font-mono tracking-[0.3em] text-muted-foreground/60 uppercase ml-1">Required Modules</label>
+            <div className="flex flex-wrap gap-2.5">
               {FEATURES.map(f => (
                 <button
                   key={f}
                   type="button"
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all border ${selectedFeatures.includes(f) ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' : 'bg-muted/30 border-border/50 text-muted-foreground hover:bg-muted/50'}`}
+                  className={cn(
+                    "px-4 py-2 rounded-sm text-[11px] font-medium tracking-wide transition-all border",
+                    selectedFeatures.includes(f)
+                      ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/10"
+                      : "bg-muted/10 border-border text-muted-foreground hover:border-primary/50"
+                  )}
                   onClick={() => toggleFeature(f)}
                 >
-                  {f}
+                  {f.toUpperCase()}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Execution Objectives</label>
+          <div className="space-y-3">
+            <label className="text-[10px] font-mono tracking-[0.3em] text-muted-foreground/60 uppercase ml-1">Logic Briefing</label>
             <textarea
-              className="min-h-40 w-full rounded-xl border border-border/50 bg-background/50 p-4 text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all resize-none placeholder:text-muted-foreground/30 leading-relaxed"
-              placeholder="Define the core logic architecture, user journeys, and critical success factors..."
+              className="min-h-48 w-full rounded-sm border border-border bg-muted/5 p-5 text-sm font-light focus:border-primary outline-none transition-all resize-none placeholder:text-muted-foreground/20 leading-relaxed"
+              placeholder="Describe the desired outcome and technical constraints..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
               required
             />
           </div>
 
-          <div className="space-y-6 pt-8 border-t border-border/50 bg-gradient-to-b from-primary/5 to-transparent -mx-4 px-4 pb-8 rounded-b-3xl">
+          <div className="space-y-8 pt-10 border-t border-border mt-8">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-sm bg-primary/10 text-primary">
                   <Sparkles className="h-4 w-4" />
                 </div>
-                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Budget Allocation Relay</label>
+                <label className="text-[10px] font-mono tracking-[0.4em] text-foreground uppercase">Budget Matrix</label>
               </div>
-              <Badge variant="outline" className="font-mono text-[9px] border-primary/20 text-primary bg-primary/5 px-2 py-0.5">INR (₹)</Badge>
+              <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest">Global Telemetry Enabled</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               {[
-                { id: 'frontend', label: 'Client Interface', color: 'blue' },
-                { id: 'backend', label: 'Logic Core', color: 'purple' },
-                { id: 'database', label: 'Neural Store', color: 'emerald' },
-                { id: 'infrastructure', label: 'Cloud Lattice', color: 'orange' }
+                { id: 'frontend', label: 'Client Layer' },
+                { id: 'backend', label: 'Logic Core' },
+                { id: 'database', label: 'Neural Store' },
+                { id: 'infrastructure', label: 'Lattice Layer' }
               ].map((item) => (
                 <div key={item.id} className="space-y-2 group">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/80 flex items-center gap-1.5 ml-1">
-                    <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                  <label className="text-[9px] font-mono tracking-widest text-muted-foreground uppercase flex items-center gap-2 ml-1">
+                    <span className="h-1 w-1 bg-primary/40 rounded-full" />
                     {item.label}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-sm font-bold">₹</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-xs font-mono">₹</span>
                     <input
                       type="number"
-                      className="w-full rounded-xl border border-border/50 bg-background/50 pl-8 pr-4 py-3 text-sm font-bold tracking-tight focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-transform group-focus-within:scale-[1.02]"
-                      placeholder="SET MANUALLY"
+                      className="w-full rounded-sm border border-border bg-muted/5 pl-8 pr-4 py-3.5 text-sm font-light tracking-tight focus:border-primary outline-none transition-all group-focus-within:bg-muted/10"
+                      placeholder="ALLOCATE"
                       value={budgets[item.id as keyof typeof budgets]}
                       onChange={e => setBudgets(prev => ({ ...prev, [item.id]: e.target.value }))}
                     />
@@ -198,31 +203,39 @@ export default function IntakeForm({ onCancel }: { onCancel?: () => void }) {
               ))}
             </div>
 
-            <div className="bg-primary/10 p-4 rounded-xl flex items-center justify-between border border-primary/20 mt-4">
-              <div className="space-y-0.5">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/70">TOTAL PROJECTED INVESTMENT</p>
-                <p className="text-2xl font-black tracking-tighter">
+            <div className="bg-primary/[0.03] p-6 rounded-sm flex items-center justify-between border border-primary/10">
+              <div className="space-y-1">
+                <p className="text-[9px] font-mono tracking-[0.3em] text-primary uppercase">Cumulative Investment</p>
+                <p className="text-3xl font-light tracking-tighter text-foreground">
                   ₹{(Object.values(budgets).reduce((acc, v) => acc + (Number(v) || 0), 0) || 0).toLocaleString()}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-[9px] font-black uppercase tracking-widest text-primary/50">EST. COMPLETION</p>
-                <p className="text-sm font-bold">≈ 7-12 DAYS</p>
+              <div className="text-right space-y-1">
+                <p className="text-[9px] font-mono tracking-[0.3em] text-muted-foreground uppercase">Est. Latency</p>
+                <p className="text-sm font-medium text-foreground uppercase tracking-wider">7-12 Cycles</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-4 pt-6 border-t border-border/50 bg-background">
+      <div className="flex gap-4 pt-8 border-t border-border bg-background mt-auto">
         {onCancel && (
-          <Button type="button" variant="outline" className="flex-1 font-black uppercase tracking-widest text-[10px] h-12" onClick={onCancel}>
-            Abort Vector
-          </Button>
+          <button
+            type="button"
+            className="flex-1 py-4 border border-border text-[10px] font-mono uppercase tracking-[0.4em] text-muted-foreground hover:bg-muted/10 transition-all rounded-sm"
+            onClick={onCancel}
+          >
+            Abort
+          </button>
         )}
-        <Button type="submit" className="flex-[2] font-black uppercase tracking-widest text-[10px] h-12 shadow-xl shadow-primary/20" disabled={loading}>
-          {loading ? 'CALIBRATING ENGINES...' : 'Initiate Execution Stream'}
-        </Button>
+        <button
+          type="submit"
+          className="flex-[2] py-4 bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-[0.4em] shadow-2xl shadow-primary/20 hover:opacity-90 transition-all rounded-sm disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? 'CALIBRATING...' : 'Initialize Vector'}
+        </button>
       </div>
     </form>
   );

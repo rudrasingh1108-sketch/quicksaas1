@@ -89,8 +89,8 @@ export function AppShell({
       >
         {/* Logo */}
         <div className={cn('flex items-center gap-3 px-5 py-6 mb-2', mini && 'justify-center px-0')}>
-          <div className="h-9 w-9 shrink-0 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-            <span className="text-emerald-400 font-bold text-lg">G</span>
+          <div className="h-9 w-9 shrink-0 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <span className="text-primary font-bold text-lg">G</span>
           </div>
           {!mini && (
             <div className="overflow-hidden whitespace-nowrap">
@@ -119,7 +119,7 @@ export function AppShell({
                 )}
               >
                 {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-emerald-400 rounded-r-full" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-r-full" />
                 )}
                 <Icon className={cn('h-4 w-4 shrink-0', !mini && 'mr-3')} />
                 {!mini && (
@@ -150,7 +150,7 @@ export function AppShell({
                   {avatarUrl ? (
                     <Avatar.Image className="h-full w-full object-cover" src={avatarUrl} alt="Profile" />
                   ) : null}
-                  <Avatar.Fallback className="bg-emerald-500/10 text-emerald-400 font-medium text-xs flex h-full w-full items-center justify-center">
+                  <Avatar.Fallback className="bg-primary/10 text-primary font-medium text-xs flex h-full w-full items-center justify-center">
                     {initials || 'GZ'}
                   </Avatar.Fallback>
                 </Avatar.Root>
@@ -184,7 +184,7 @@ export function AppShell({
               <div className="h-px bg-border my-1" />
               <DropdownMenu.Item asChild>
                 <button
-                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-colors"
+                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-500/70 hover:text-red-500 hover:bg-red-500/5 transition-colors"
                   onClick={async () => {
                     const res = await fetch('/api/auth/logout', { method: 'POST' });
                     if (res.ok) window.location.href = '/login';
@@ -206,7 +206,7 @@ export function AppShell({
             <div>
               <h1 className="text-lg font-light text-foreground tracking-tight">{title}</h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="w-1 h-1 rounded-full bg-primary" />
                 <span className="font-mono text-[9px] tracking-[0.2em] text-muted-foreground uppercase">Live</span>
               </div>
             </div>
