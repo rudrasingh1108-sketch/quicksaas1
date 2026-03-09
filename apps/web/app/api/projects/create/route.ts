@@ -19,16 +19,16 @@ export async function POST(request: NextRequest) {
     const supabase = createSupabaseServiceClient();
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!token) return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
 
     const authClient = createSupabaseServiceClient();
-    const userRes = await authClient.auth.getUser(token);
-    if (!userRes.data.user) return NextResponse.json({ error: 'Invalid session token' }, { status: 401 });
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    if (!user) return NextResponse.json({ error: `Unauthorized: ${authError?.message || 'Invalid session token'}` }, { status: 401 });
 
     const { data: actor, error: actorError } = await supabase
       .from('users')
       .select('id, role')
-      .eq('auth_user_id', userRes.data.user.id)
+      .eq('auth_user_id', user.id)
       .is('deleted_at', null)
       .maybeSingle();
 
@@ -63,6 +63,15 @@ export async function POST(request: NextRequest) {
       capacityThreshold: 1000,
     });
 
+    // Prioritize manual budget sum for total_price
+    let finalTotalPrice = pricing.total;
+    if (body.budgets) {
+      const budgetSum = Object.values(body.budgets).reduce((acc, val) => acc + (Number(val) || 0), 0);
+      if (budgetSum > 0) {
+        finalTotalPrice = budgetSum;
+      }
+    }
+
     const projectInsert = await supabase
       .from('projects')
       .insert({
@@ -75,7 +84,7 @@ export async function POST(request: NextRequest) {
         complexity_score: structured.complexityScore,
         pricing_breakdown: pricing,
         urgency: structured.urgency,
-        total_price: pricing.total,
+        total_price: finalTotalPrice,
         status: 'active',
       })
       .select('id, title, status, complexity_score, total_price')
@@ -87,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     await supabase.from('project_intake').upsert({ project_id: projectInsert.data.id, intake }, { onConflict: 'project_id' });
 
-    const modulesPayload = planModulesForProject(projectInsert.data.id, structured, projectInsert.data.total_price, body.budgets);
+    const modulesPayload = planModulesForProject(projectInsert.data.id, structured, finalTotalPrice, body.budgets);
     const modulesInsert = await supabase
       .from('project_modules')
       .insert(modulesPayload)

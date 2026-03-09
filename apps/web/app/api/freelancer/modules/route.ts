@@ -3,16 +3,16 @@ import { createSupabaseServiceClient } from '../../../../lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   const token = request.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!token) return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
 
   const supabase = createSupabaseServiceClient();
-  const userRes = await supabase.auth.getUser(token);
-  if (!userRes.data.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (!user) return NextResponse.json({ error: `Unauthorized: ${authError?.message || 'Invalid session token'}` }, { status: 401 });
 
   const { data: actor } = await supabase
     .from('users')
     .select('id, role')
-    .eq('auth_user_id', userRes.data.user.id)
+    .eq('auth_user_id', user.id)
     .maybeSingle();
 
   if (!actor || actor.role !== 'freelancer') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

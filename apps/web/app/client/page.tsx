@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -88,55 +89,110 @@ export default function ClientDashboard() {
       {pageLoading ? (
         <div className="flex items-center justify-center p-20 text-muted-foreground animate-pulse">Loading execution space...</div>
       ) : (
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {kpis.map((kpi, i) => (
-              <motion.div key={kpi.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <Card className="group p-5 transition hover:-translate-y-0.5 hover:border-primary/40">
-                  <kpi.icon className="mb-4 h-5 w-5 text-primary" />
-                  <p className="text-sm text-muted-foreground">{kpi.label}</p>
-                  <p className="mt-1 text-2xl font-semibold">{kpi.value}</p>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              {kpis.slice(0, 2).map((kpi, i) => (
+                <motion.div key={kpi.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                  <Card className="p-6 bg-gradient-to-br from-primary/5 to-transparent border-primary/20 relative overflow-hidden group">
+                    <div className="absolute right-[-10%] top-[-10%] opacity-5 group-hover:scale-110 transition-transform">
+                      <kpi.icon size={120} />
+                    </div>
+                    <p className="text-xs font-black uppercase tracking-widest text-primary/60">{kpi.label}</p>
+                    <p className="mt-2 text-4xl font-black tracking-tighter">{kpi.value}</p>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
 
-          <Card className="p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-lg font-semibold">Project pipeline</p>
-                <p className="text-sm text-muted-foreground">Execution visibility across all modules.</p>
-              </div>
-              <Modal trigger={<Button>Create Project</Button>} title="Launch New Project">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
+                <FolderKanban className="text-primary h-5 w-5" />
+                Active Operations
+              </h2>
+              <Modal trigger={<Button size="sm" className="font-bold shadow-lg shadow-primary/20">Launch New Vector</Button>} title="Launch New Project">
                 <IntakeForm />
               </Modal>
             </div>
-            <div className="overflow-x-auto">
+
+            <div className="grid gap-4 md:grid-cols-2">
               {projects.length === 0 ? (
-                <div className="py-10 text-center text-muted-foreground border border-dashed rounded-lg">
-                  No projects launched yet. Submit your first brief.
-                </div>
+                <Card className="md:col-span-2 py-12 text-center text-muted-foreground border-dashed bg-transparent border-border/50">
+                  <p className="font-medium italic">No active neural links. Initiate a briefed project to begin.</p>
+                </Card>
               ) : (
-                <table className="w-full text-sm">
-                  <thead className="text-left text-muted-foreground">
-                    <tr>
-                      <th className="pb-3">Project</th><th className="pb-3">Status</th><th className="pb-3">Deadline</th><th className="pb-3">Completion</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projects.map((row) => (
-                      <tr key={row.id} className="border-t border-border/70">
-                        <td className="py-3 font-medium">{row.title}</td>
-                        <td className="py-3"><Badge variant="outline">{row.status}</Badge></td>
-                        <td className="py-3">{row.deadline_at ? new Date(row.deadline_at).toLocaleDateString() : 'TBD'}</td>
-                        <td className="py-3">{row.completion_pct || 0}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                projects.map((p, i) => (
+                  <motion.div key={p.id} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
+                    <Link href={`/projects/${p.id}`}>
+                      <Card className="group p-5 border-border/50 hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="space-y-1">
+                            <h3 className="font-bold tracking-tight group-hover:text-primary transition-colors">{p.title}</h3>
+                            <p className="text-[10px] text-muted-foreground uppercase font-black">ID: {p.id.slice(0, 8)}</p>
+                          </div>
+                          <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase tracking-widest">{p.status}</Badge>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Investment</span>
+                            <span className="font-bold">₹{Number(p.total_price).toLocaleString()}</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary" style={{ width: `${p.completion_pct || 15}%` }} />
+                          </div>
+                          <div className="flex justify-between text-[10px] items-center">
+                            <span className="text-muted-foreground italic">Projected: {p.deadline_at ? new Date(p.deadline_at).toLocaleDateString() : 'TBD'}</span>
+                            <span className="font-mono text-primary">{p.completion_pct || 0}% SYNC</span>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  </motion.div>
+                ))
               )}
             </div>
-          </Card>
+          </div>
+
+          <div className="lg:col-span-4 space-y-6">
+            <Card className="p-6 bg-slate-950 text-white border-none shadow-2xl relative overflow-hidden h-[600px] flex flex-col">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.1),transparent_70%)]" />
+              <div className="relative z-10 flex flex-col h-full">
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary">Live Activity Relay</h3>
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                </div>
+
+                <div className="flex-1 space-y-8 overflow-y-auto custom-scrollbar pr-2">
+                  {projects.slice(0, 5).map((p) => (
+                    <div key={p.id} className="relative pl-6 border-l border-primary/20">
+                      <div className="absolute -left-[4.5px] top-1 h-2 w-2 rounded-full bg-primary" />
+                      <p className="text-[10px] font-mono text-primary/60 uppercase mb-1">Status Update</p>
+                      <p className="text-xs font-medium text-slate-300">Project <span className="text-white">"{p.title}"</span> transition to <span className="text-primary">{p.status}</span> state.</p>
+                      <p className="text-[9px] text-slate-500 mt-1 font-mono">{new Date().toLocaleTimeString()}</p>
+                    </div>
+                  ))}
+                  {!projects.length && <p className="text-xs text-slate-500 font-medium italic">Scanning for telemetry...</p>}
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">System Integrity</span>
+                    <span className="text-[10px] font-mono text-primary">OPTIONAL</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white/5 p-2 rounded border border-white/10">
+                      <p className="text-[9px] text-slate-500 uppercase font-black">Reliability</p>
+                      <p className="text-xs font-bold text-slate-200">99.8%</p>
+                    </div>
+                    <div className="bg-white/5 p-2 rounded border border-white/10">
+                      <p className="text-[9px] text-slate-500 uppercase font-black">Uptime</p>
+                      <p className="text-xs font-bold text-slate-200">100%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
     </AppShell>
