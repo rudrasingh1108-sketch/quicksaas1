@@ -7,9 +7,10 @@ import { Card } from '../../../components/ui/card';
 import { Progress } from '../../../components/ui/progress';
 import { Badge } from '../../../components/ui/badge';
 import { Skeleton } from '../../../components/ui/skeleton';
-import { History, FileCode, CheckCircle2, Clock, Cpu } from 'lucide-react';
+import { History, FileCode, CheckCircle2, Clock, Cpu, Sparkles } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { ProjectChat } from '../../../components/project/project-chat';
+import { AIProgressEngine } from '@services/ai-progress-engine';
 
 interface ModuleItem { id: string; module_name: string; module_status: string; module_weight: number; assigned_freelancer_id?: string; due_at?: string; freelancer?: { full_name: string } }
 interface SessionItem { id: string; module_id: string; deployment_url: string; build_url: string; session_status: string; }
@@ -44,6 +45,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     setSessions(payload.sessions ?? []);
     setLogs(payload.progressLogs ?? []);
     setSnapshots(payload.workSnapshots ?? []);
+    const aiAnalysis = payload.aiAnalysis ?? { progress: 0, summary: "Analysis pending..." };
+    // We can store this in a state if we want to show it in the UI
+    setProject((prev: any) => ({ ...prev, aiAnalysis }));
 
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
@@ -76,7 +80,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     };
   }, [params.id]);
 
-  const completion = modules.length ? Math.round((modules.filter((m) => m.module_status === 'completed').length / modules.length) * 100) : 0;
+  const completion = useMemo(() => AIProgressEngine.calculateProjectProgress(modules), [modules]);
 
   const latestDeploymentUrl = useMemo(() => {
     const readySession = sessions.find(s => s.deployment_url && (s.session_status === 'ready' || s.session_status === 'deployed'));
@@ -89,6 +93,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         <div className="space-y-6">
           <Card className="p-6">
             <p className="text-2xl font-semibold">{project?.title}</p>
+            {project?.aiAnalysis?.summary && (
+              <p className="mt-2 text-xs text-primary font-medium bg-primary/5 p-2 rounded border border-primary/10">
+                <Sparkles className="h-3 w-3 inline mr-1 -mt-0.5" />
+                AI Analysis: {project.aiAnalysis.summary}
+              </p>
+            )}
             <p className="mt-1 text-sm text-muted-foreground">Live execution pipeline</p>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               <div><p className="text-xs text-muted-foreground">Status</p><Badge className="mt-2">{project?.status}</Badge></div>
@@ -217,8 +227,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-2 rounded border border-border bg-card/50">
                     <span className="text-xs">GitHub Repository</span>
-                    <a href={`https://github.com/gigzs-deploy/${project?.id}`} target="_blank" rel="noreferrer" className="text-[10px] hover:underline flex items-center gap-1 text-primary">
-                      View Repo
+                    <a href={project?.github_repo_url || `https://github.com/gigzs-deploy/${project?.id}`} target="_blank" rel="noreferrer" className="text-[10px] hover:underline flex items-center gap-1 text-primary">
+                      {project?.github_repo_url ? 'View Live Repo' : 'View Repo (Pending)'}
                     </a>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded border border-border bg-card/50">

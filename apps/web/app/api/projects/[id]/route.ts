@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServiceClient } from '../../../../lib/supabase/server';
+import { AIProgressEngine } from '../../../../../../services/ai-progress-engine';
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     if (!actor) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    let projectQuery = supabase.from('projects').select('id, title, status, complexity_score, total_price, created_at').eq('id', params.id);
+    let projectQuery = supabase.from('projects').select('id, title, status, complexity_score, total_price, created_at, github_repo_url, github_repo_full_name').eq('id', params.id);
 
     if (actor.role === 'client') {
       projectQuery = projectQuery.eq('client_id', actor.id);
@@ -65,6 +66,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     if (logsError) throw logsError;
 
+    // Get AI Progress Analysis
+    const aiAnalysis = await AIProgressEngine.getAIProgressAnalysis(project.title, modules ?? []);
+
     const riskLogs = actor.role === 'admin'
       ? await supabase
         .from('risk_logs')
@@ -79,7 +83,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       modules: modules ?? [],
       sessions: sessionsData,
       progressLogs: progressLogs ?? [],
-      risks: riskLogs.data ?? []
+      risks: riskLogs.data ?? [],
+      aiAnalysis // New field
     });
   } catch (error) {
     console.error('Error in project detail API:', error);

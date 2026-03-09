@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServiceClient } from '../../../../../../lib/supabase/server';
+import { GitHubService } from '@services/github-service';
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -52,6 +53,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         shift_end: shiftEnd.toISOString(),
         status: 'active'
     });
+
+    // Invite to GitHub if available
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (githubToken) {
+        try {
+            // Get GitHub username for actor
+            const { data: userData } = await supabase.from('users').select('github_username').eq('id', actor.id).single();
+            // Get Project repo info
+            const { data: moduleDetail } = await supabase.from('project_modules').select('project_id').eq('id', params.id).single();
+            const { data: projectData } = await supabase.from('projects').select('github_repo_full_name').eq('id', moduleDetail?.project_id).single();
+
+            if (userData?.github_username && projectData?.github_repo_full_name) {
+                const gh = new GitHubService(githubToken, process.env.GITHUB_OWNER || 'gigzs-projects');
+                await gh.addCollaborator(projectData.github_repo_full_name, userData.github_username);
+                console.log(`Invited ${userData.github_username} to ${projectData.github_repo_full_name}`);
+            }
+        } catch (ghError: any) {
+            console.error('GitHub Invitation failed:', ghError.message);
+        }
+    }
 
     return NextResponse.json({ success: true });
 }

@@ -3,12 +3,14 @@ import { calculateDynamicPrice } from '@services/pricing-engine';
 import { createSupabaseServiceClient } from '../../../../lib/supabase/server';
 import { validateIntake, intakeToStructuredRequirements, structuredToGml } from '@services/intake-mapper';
 import { planModulesForProject } from '@services/module-planner';
+import { GitHubService } from '@services/github-service';
 import { planAssignmentsForModule } from '@services/assignment-engine';
 
 interface CreateProjectBody {
   title: string;
   rawRequirement?: string;
   intake?: any;
+  budgets?: Record<string, number>;
 }
 
 export async function POST(request: NextRequest) {
@@ -85,14 +87,45 @@ export async function POST(request: NextRequest) {
 
     await supabase.from('project_intake').upsert({ project_id: projectInsert.data.id, intake }, { onConflict: 'project_id' });
 
-    const modulesPayload = planModulesForProject(projectInsert.data.id, structured, projectInsert.data.total_price);
+    const modulesPayload = planModulesForProject(projectInsert.data.id, structured, projectInsert.data.total_price, body.budgets);
     const modulesInsert = await supabase
       .from('project_modules')
       .insert(modulesPayload)
-      .select('id, module_key, module_name, module_status, module_weight, project_id, module_vector, required_skills_vector');
+      .select();
 
-    if (modulesInsert.error || !modulesInsert.data) {
-      return NextResponse.json({ error: modulesInsert.error?.message ?? 'Module creation failed' }, { status: 400 });
+    if (modulesInsert.error) {
+      return NextResponse.json({ error: modulesInsert.error.message }, { status: 500 });
+    }
+
+    // Attempt to create GitHub Repository
+    const githubToken = process.env.GITHUB_TOKEN;
+    const githubOwner = process.env.GITHUB_OWNER || 'gigzs-projects';
+
+    if (githubToken) {
+      try {
+        const gh = new GitHubService(githubToken, githubOwner);
+        const repo = await gh.createRepository(
+          `${projectInsert.data.title.toLowerCase().replace(/\s+/g, '-')}-${projectInsert.data.id.slice(0, 8)}`,
+          `Execution repository for Gigzs project: ${projectInsert.data.title}`
+        );
+
+        if (repo && repo.html_url) {
+          await supabase
+            .from('projects')
+            .update({
+              github_repo_url: repo.html_url,
+              github_repo_full_name: repo.full_name
+            })
+            .eq('id', projectInsert.data.id);
+        }
+      } catch (ghError: any) {
+        console.error('GitHub Repository Creation failed:', ghError.message);
+        // We don't fail the whole project creation if GitHub fails
+      }
+    }
+
+    if (!modulesInsert.data) { // This check was part of the original `if (modulesInsert.error || !modulesInsert.data)`
+      return NextResponse.json({ error: 'Module creation failed' }, { status: 400 });
     }
 
     // For real-data testing, we will NOT auto-assign freelancers. 
