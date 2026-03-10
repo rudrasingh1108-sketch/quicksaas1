@@ -119,40 +119,41 @@ export default function FreelancerDashboard() {
       ) : !profile ? (
         <FreelancerOnboarding />
       ) : (
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-10">
+          {/* KPI Grid */}
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {cards.map((card) => (
-              <Card key={card.label} className="p-5 border-border/50 bg-background/50">
-                <p className="text-sm text-muted-foreground font-medium">{card.label}</p>
-                <p className="mt-1 text-2xl font-bold tracking-tight">{card.value}</p>
+              <Card key={card.label} className="p-6 border-border/60 shadow-sm bg-card hover:border-primary/30 transition-colors">
+                <p className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3">{card.label}</p>
+                <p className="text-3xl font-light text-foreground tracking-tight">{card.value}</p>
               </Card>
             ))}
           </div>
 
           {available.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-bold tracking-tight">Available Tasks</h2>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-border/50 pb-4">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h2 className="text-[10px] font-mono font-bold tracking-[0.3em] text-muted-foreground uppercase">Available Tasks</h2>
               </div>
 
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {groupedAvailable.map(([pId, project]) => (
-                  <Card key={pId} className="p-5 border-primary/20 bg-primary/5 flex flex-col gap-4">
+                  <Card key={pId} className="p-6 border-primary/15 bg-accent/20 flex flex-col gap-4 hover:border-primary/30 transition-colors">
                     <div className="flex items-center justify-between border-b border-primary/10 pb-3">
-                      <h3 className="font-bold text-primary uppercase tracking-widest text-xs">{project.title}</h3>
-                      <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-none">{project.modules.length} TASKS</Badge>
+                      <h3 className="font-mono font-bold text-primary uppercase tracking-[0.2em] text-[10px]">{project.title}</h3>
+                      <Badge className="bg-accent text-primary border-none text-[9px] font-mono uppercase tracking-widest">{project.modules.length} TASKS</Badge>
                     </div>
 
                     <div className="space-y-3">
                       {project.modules.map((module: any) => (
-                        <div key={module.id} className="p-3 rounded-lg bg-background/40 border border-primary/10 hover:border-primary/30 transition-all group">
-                          <div className="flex justify-between items-start mb-2">
-                            <p className="font-semibold text-sm">{module.module_name}</p>
-                            <span className="text-primary font-bold text-sm">₹{module.budget_inr?.toLocaleString() || '0'}</span>
+                        <div key={module.id} className="p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all group">
+                          <div className="flex justify-between items-start mb-3">
+                            <p className="font-medium text-sm text-foreground">{module.module_name}</p>
+                            <span className="text-primary font-mono font-bold text-sm">₹{module.budget_inr?.toLocaleString() || '0'}</span>
                           </div>
                           <button
-                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-1.5 rounded-md font-bold text-xs transition-colors shadow-sm shadow-primary/20"
+                            className="w-full bg-foreground hover:bg-primary text-background py-2 rounded-md font-mono font-bold text-[10px] uppercase tracking-[0.2em] transition-all shadow-sm"
                             onClick={async () => {
                               try {
                                 const { data: { session } } = await supabase.auth.getSession();
@@ -175,32 +176,32 @@ export default function FreelancerDashboard() {
             </div>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold tracking-tight">Active Assignments</h2>
-                  <Badge variant="outline" className="font-mono text-[10px]">{modules.length} Connected</Badge>
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-8">
+              <Card className="p-8 border-border/60 shadow-sm bg-card">
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-[10px] font-mono font-bold tracking-[0.3em] text-muted-foreground uppercase">Active Assignments</h2>
+                  <Badge className="bg-accent text-primary border-none text-[9px] font-mono uppercase tracking-widest">{modules.length} Connected</Badge>
                 </div>
                 {modules.length ? (
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-5 md:grid-cols-2">
                     {modules.map((module, i) => (
                       <motion.div key={module.id} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
                         <Link href={`/modules/${module.id}`}>
-                          <Card className="group h-full p-5 border-border/50 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/5 transition-all">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="flex items-center gap-2">
-                                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                          <Card className="group h-full p-5 border-border/60 hover:border-primary/30 hover:shadow-md transition-all bg-card">
+                            <div className="flex items-center justify-between mb-5">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-accent text-primary">
                                   <Clock className="h-4 w-4" />
                                 </div>
-                                <p className="font-bold text-sm tracking-tight">{module.module_name}</p>
+                                <p className="font-medium text-sm tracking-tight text-foreground">{module.module_name}</p>
                               </div>
-                              <Badge className="bg-primary/10 text-primary border-none uppercase text-[9px] font-black tracking-widest">{module.module_status}</Badge>
+                              <Badge className="bg-accent text-primary border-none uppercase text-[9px] font-mono tracking-widest">{module.module_status}</Badge>
                             </div>
 
                             {module.shift && (
                               <div className="space-y-2">
-                                <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-black tracking-widest">
+                                <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-mono font-bold tracking-[0.2em]">
                                   <span>Shift Relay</span>
                                   <span className="text-primary">{module.shift.status}</span>
                                 </div>
@@ -211,7 +212,7 @@ export default function FreelancerDashboard() {
                                     className="h-full bg-primary"
                                   />
                                 </div>
-                                <p className="text-[10px] text-muted-foreground font-medium italic">
+                                <p className="text-[10px] text-muted-foreground font-light italic">
                                   Shift ends {new Date(module.shift.shift_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                               </div>
@@ -222,38 +223,40 @@ export default function FreelancerDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className="relative overflow-hidden rounded-2xl border border-dashed border-border p-12 text-center">
-                    <p className="text-muted-foreground text-sm font-medium">No active neural links found.</p>
+                  <div className="rounded-2xl border border-dashed border-border/50 p-16 text-center bg-muted/10">
+                    <p className="text-muted-foreground text-sm font-light italic">No active neural links found.</p>
                   </div>
                 )}
               </Card>
             </div>
 
-            <div className="space-y-6">
-              <Card className="p-6 bg-slate-950 text-white border-none shadow-2xl relative overflow-hidden">
+            <div className="space-y-8">
+              {/* Neural Activity Feed */}
+              <Card className="p-6 bg-foreground text-background border-none shadow-lg relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(154,123,79,0.1),transparent_70%)]" />
                 <div className="relative z-10">
-                  <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary mb-6">Neural Activity Feed</h3>
+                  <h3 className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-primary mb-8">Neural Activity Feed</h3>
                   <div className="space-y-6">
                     {activity.map((act, i) => (
                       <div key={act.id} className="relative pl-6 border-l border-primary/20">
-                        <div className="absolute -left-[4.5px] top-1 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
-                        <p className="text-[10px] font-mono text-primary/60 uppercase mb-1">
+                        <div className="absolute -left-[4.5px] top-1 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(154,123,79,0.5)]" />
+                        <p className="text-[9px] font-mono text-primary/60 uppercase tracking-widest mb-1">
                           {new Date(act.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
-                        <p className="text-xs font-medium text-slate-300 line-clamp-2">{act.public_summary}</p>
+                        <p className="text-xs font-light text-white/70 line-clamp-2">{act.public_summary}</p>
                       </div>
                     ))}
-                    {!activity.length && <p className="text-xs text-slate-500 font-medium italic">Waiting for telemetry...</p>}
+                    {!activity.length && <p className="text-xs text-white/30 font-light italic">Waiting for telemetry...</p>}
                   </div>
                 </div>
               </Card>
 
-              <Card className="p-6 border-primary/20 bg-primary/5">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-4">Neural Status</h3>
+              {/* Neural Status */}
+              <Card className="p-6 border-primary/15 bg-accent/20">
+                <h3 className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-primary mb-4">Neural Status</h3>
                 <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-[10px] font-mono text-primary/70 uppercase">Relay Nodes Synchronized</span>
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(154,123,79,0.5)]" />
+                  <span className="text-[10px] font-mono text-primary/70 uppercase tracking-wider">Relay Nodes Synchronized</span>
                 </div>
               </Card>
             </div>

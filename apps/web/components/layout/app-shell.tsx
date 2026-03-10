@@ -98,13 +98,13 @@ export function AppShell({
       >
         {/* Logo */}
         <div className={cn('flex items-center gap-3 px-5 py-6 mb-2', mini && 'justify-center px-0')}>
-          <div className="h-9 w-9 shrink-0 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+          <div className="h-9 w-9 shrink-0 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shadow-[inset_0_0_10px_rgba(154,123,79,0.1)]">
             <span className="text-primary font-bold text-lg">G</span>
           </div>
           {!mini && (
             <div className="overflow-hidden whitespace-nowrap">
-              <p className="text-sidebar-foreground font-medium tracking-tight">Gigzs</p>
-              <p className="text-[9px] uppercase tracking-[0.2em] text-sidebar-foreground/50 font-mono">Delivery OS</p>
+              <p className="text-foreground font-medium tracking-tight">Gigzs</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-mono">Delivery OS</p>
             </div>
           )}
         </div>
@@ -120,19 +120,19 @@ export function AppShell({
                 href={item.href}
                 title={mini ? item.label : undefined}
                 className={cn(
-                  'flex items-center rounded-lg transition-all duration-200 group relative',
-                  mini ? 'justify-center p-3' : 'px-3 py-2.5',
+                  'flex items-center rounded-lg transition-all duration-300 group relative',
+                  mini ? 'justify-center p-3' : 'px-3 py-3 mb-1',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-foreground'
-                    : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                    ? 'bg-accent/50 text-primary shadow-sm border border-primary/10'
+                    : 'text-foreground/70 hover:bg-accent/30 hover:text-foreground'
                 )}
               >
                 {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-r-full" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full shadow-[0_0_8px_rgba(154,123,79,0.5)]" />
                 )}
-                <Icon className={cn('h-4 w-4 shrink-0', !mini && 'mr-3')} />
+                <Icon className={cn('h-4 w-4 shrink-0 transition-transform group-hover:scale-110', !mini && 'mr-4')} />
                 {!mini && (
-                  <span className="text-sm font-light tracking-wide">{item.label}</span>
+                  <span className="text-sm font-medium tracking-wide">{item.label}</span>
                 )}
               </Link>
             );
@@ -142,31 +142,31 @@ export function AppShell({
         {/* Minimise toggle */}
         <button
           onClick={() => setMini(!mini)}
-          className="absolute -right-3 top-[72px] h-6 w-6 rounded-full bg-sidebar-background border border-sidebar-border flex items-center justify-center text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors shadow-lg"
+          className="absolute -right-3 top-[72px] h-6 w-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary transition-colors shadow-sm z-50 hover:scale-110"
         >
           {mini ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
         {/* Bottom user section */}
-        <div className={cn('p-3 border-t border-sidebar-border', mini && 'flex justify-center')}>
+        <div className={cn('p-4 border-t border-border mt-auto', mini && 'flex justify-center')}>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <button className={cn(
-                'flex items-center gap-2.5 rounded-lg p-2 w-full hover:bg-sidebar-accent/50 transition-colors group',
+                'flex items-center gap-3 rounded-lg p-2 w-full hover:bg-accent/50 transition-colors group',
                 mini && 'justify-center'
               )}>
-                <Avatar.Root className="h-8 w-8 overflow-hidden rounded-lg shrink-0 border border-sidebar-border">
+                <Avatar.Root className="h-9 w-9 overflow-hidden rounded-lg shrink-0 border border-border shadow-sm">
                   {avatarUrl ? (
                     <Avatar.Image className="h-full w-full object-cover" src={avatarUrl} alt="Profile" />
                   ) : null}
-                  <Avatar.Fallback className="bg-primary/10 text-primary font-medium text-xs flex h-full w-full items-center justify-center">
+                  <Avatar.Fallback className="bg-primary/5 text-primary font-medium text-xs flex h-full w-full items-center justify-center">
                     {initials || 'GZ'}
                   </Avatar.Fallback>
                 </Avatar.Root>
                 {!mini && (
                   <div className="flex flex-col items-start text-left leading-none min-w-0">
-                    <span className="text-xs text-sidebar-foreground/80 truncate max-w-[130px]">{name || 'Guest'}</span>
-                    <span className="text-[9px] font-mono uppercase tracking-wider text-sidebar-foreground/50">{role}</span>
+                    <span className="text-sm font-medium text-foreground truncate max-w-[130px]">{name || 'Guest'}</span>
+                    <span className="text-[10px] mt-1 font-mono uppercase tracking-[0.2em] text-muted-foreground">{role}</span>
                   </div>
                 )}
               </button>
@@ -210,13 +210,13 @@ export function AppShell({
       {/* ── MAIN CONTENT ─────────────────────────────────────────────────────── */}
       <div className={cn('transition-all duration-300 min-h-screen flex flex-col', mini ? 'lg:pl-[72px]' : 'lg:pl-64')}>
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-          <div className="flex h-16 items-center justify-between px-8">
+        <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl">
+          <div className="flex h-[72px] items-center justify-between px-8 max-w-7xl mx-auto w-full">
             <div>
-              <h1 className="text-lg font-light text-foreground tracking-tight">{title}</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <div className="w-1 h-1 rounded-full bg-primary" />
-                <span className="font-mono text-[9px] tracking-[0.2em] text-muted-foreground uppercase">Live</span>
+              <h1 className="text-2xl font-light text-foreground tracking-tight">{title}</h1>
+              <div className="flex items-center gap-2 mt-1 px-2 py-0.5 rounded-full border border-primary/20 bg-primary/5 w-fit">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(154,123,79,0.5)]" />
+                <span className="font-mono text-[9px] tracking-[0.3em] font-bold text-primary uppercase">System Tracking Active</span>
               </div>
             </div>
           </div>

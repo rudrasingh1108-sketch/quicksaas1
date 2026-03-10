@@ -13,7 +13,9 @@ export default function NeuralFlux() {
         if (!ctx) return;
 
         let animationFrameId: number;
-        let time = 0;
+        let lastTimestamp = 0;
+        const fpsLimit = 30;
+        const interval = 1000 / fpsLimit;
 
         const resize = () => {
             canvas.width = window.innerWidth;
@@ -34,8 +36,14 @@ export default function NeuralFlux() {
             });
         }
 
-        const draw = () => {
-            time += 0.005;
+        const draw = (timestamp: number) => {
+            animationFrameId = requestAnimationFrame(draw);
+
+            const delta = timestamp - lastTimestamp;
+            if (delta < interval) return;
+
+            lastTimestamp = timestamp - (delta % interval);
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Draw flowing background
@@ -74,11 +82,9 @@ export default function NeuralFlux() {
                     }
                 }
             }
-
-            animationFrameId = requestAnimationFrame(draw);
         };
 
-        draw();
+        animationFrameId = requestAnimationFrame(draw);
 
         return () => {
             window.removeEventListener('resize', resize);

@@ -1,28 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useState, useRef } from 'react';
+import { motion, useScroll, useMotionValue, useAnimationFrame } from 'framer-motion';
 
 export default function SystemHUD() {
     const { scrollY } = useScroll();
     const [time, setTime] = useState('');
-    const [scrollPos, setScrollPos] = useState(0);
     const [mounted, setMounted] = useState(false);
+
+    // Performance: Use MotionValue for scroll pos to avoid React re-renders
+    const scrollPosValue = useMotionValue(0);
+    const scrollPosRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
         setMounted(true);
         const timer = setInterval(() => {
             const now = new Date();
             setTime(now.toLocaleTimeString('en-GB', { hour12: false }));
-        }, 1000);
+        }, 5000); // Reduce clock update frequency
 
-        const unsubscribe = scrollY.on('change', (v) => setScrollPos(Math.round(v)));
+        const unsubscribe = scrollY.on('change', (v) => {
+            scrollPosValue.set(Math.round(v));
+        });
 
         return () => {
             clearInterval(timer);
             unsubscribe();
         };
-    }, [scrollY]);
+    }, [scrollY, scrollPosValue]);
+
+    // Update the DOM directly for the scroll position text
+    useAnimationFrame(() => {
+        if (scrollPosRef.current) {
+            scrollPosRef.current.textContent = `${scrollPosValue.get()}PX`;
+        }
+    });
 
     if (!mounted) return null;
 
@@ -40,7 +52,7 @@ export default function SystemHUD() {
                     <div className="space-y-1">
                         <div className="flex justify-between gap-8">
                             <span className="opacity-40">Vector_Pos</span>
-                            <span className="text-primary/60 tabular-nums">{scrollPos}PX</span>
+                            <span ref={scrollPosRef} className="text-primary/60 tabular-nums">0PX</span>
                         </div>
                         <div className="flex justify-between gap-8">
                             <span className="opacity-40">Neural_Link</span>
@@ -55,11 +67,14 @@ export default function SystemHUD() {
 
                 <div className="flex gap-2 opacity-20">
                     {Array.from({ length: 12 }).map((_, i) => (
-                        <motion.div
+                        <div
                             key={i}
-                            animate={{ height: [4, 12, 4] }}
-                            transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.1 }}
-                            className="w-0.5 bg-primary/80"
+                            className="w-0.5 bg-primary/80 animate-pulse"
+                            style={{
+                                height: '8px',
+                                animationDelay: `${i * 0.1}s`,
+                                animationDuration: '1.5s'
+                            }}
                         />
                     ))}
                 </div>

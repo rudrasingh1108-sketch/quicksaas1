@@ -122,7 +122,7 @@ function NeuralDataOverlay() {
       let str = '';
       for (let i = 0; i < 8; i++) str += chars[Math.floor(Math.random() * chars.length)];
       setText(str);
-    }, 150);
+    }, 1000); // Throttled from 150ms to 1000ms
     return () => clearInterval(interval);
   }, []);
   return <span className="font-mono text-[8px] opacity-20">{text}</span>;

@@ -90,38 +90,57 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   return (
     <AppShell role="client" title="Project Detail">
       {loading ? <Skeleton className="h-80 w-full" /> : (
-        <div className="space-y-6">
-          <Card className="p-6">
-            <p className="text-2xl font-semibold">{project?.title}</p>
-            {project?.aiAnalysis?.summary && (
-              <p className="mt-2 text-xs text-primary font-medium bg-primary/5 p-2 rounded border border-primary/10">
-                <Sparkles className="h-3 w-3 inline mr-1 -mt-0.5" />
-                AI Analysis: {project.aiAnalysis.summary}
-              </p>
-            )}
-            <p className="mt-1 text-sm text-muted-foreground">Live execution pipeline</p>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <div><p className="text-xs text-muted-foreground">Status</p><Badge className="mt-2">{project?.status}</Badge></div>
-              <div><p className="text-xs text-muted-foreground">Completion</p><p className="mt-2 text-lg font-medium">{completion}%</p></div>
-              <div><p className="text-xs text-muted-foreground">Payment summary</p><p className="mt-2 text-lg font-medium">₹{project?.total_price}</p></div>
+        <div className="space-y-8 max-w-7xl mx-auto">
+          {/* Project Header */}
+          <div className="border-b border-border/50 pb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(154,123,79,0.5)]" />
+              <span className="text-[10px] font-mono tracking-[0.3em] font-bold text-muted-foreground uppercase">Mission Brief</span>
             </div>
-          </Card>
+            <h1 className="text-3xl md:text-4xl font-light tracking-tight text-foreground mb-3">{project?.title}</h1>
+            {project?.aiAnalysis?.summary && (
+              <div className="mt-4 flex items-start gap-2 p-4 rounded-xl bg-accent/30 border border-primary/10">
+                <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <p className="text-xs text-foreground/80 font-light leading-relaxed">{project.aiAnalysis.summary}</p>
+              </div>
+            )}
+          </div>
 
-          <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-            <div className="space-y-6">
-              <Card className="p-6">
-                <p className="font-semibold mb-4">Live execution pipeline</p>
+          {/* KPI Strip */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="p-6 border-border/60 shadow-sm bg-card">
+              <p className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3">Status</p>
+              <Badge className="bg-accent text-primary border-none text-[10px] font-mono uppercase tracking-widest px-3 py-1">{project?.status}</Badge>
+            </Card>
+            <Card className="p-6 border-border/60 shadow-sm bg-card">
+              <p className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3">Completion</p>
+              <p className="text-3xl font-light text-foreground tracking-tight">{completion}%</p>
+            </Card>
+            <Card className="p-6 border-border/60 shadow-sm bg-card">
+              <p className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3">Total Investment</p>
+              <p className="text-3xl font-light text-foreground tracking-tight">₹{Number(project?.total_price || 0).toLocaleString()}</p>
+            </Card>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-[2fr,1fr]">
+            <div className="space-y-8">
+              {/* Execution Pipeline */}
+              <Card className="p-8 border-border/60 shadow-sm bg-card">
+                <div className="flex items-center gap-3 mb-8">
+                  <Cpu className="h-4 w-4 text-primary" />
+                  <h2 className="text-[10px] font-mono font-bold tracking-[0.3em] text-muted-foreground uppercase">Execution Pipeline</h2>
+                </div>
                 <div className="space-y-4">
                   {modules.map((module) => (
-                    <div key={module.id} className="rounded-lg border border-border p-4">
-                      <div className="mb-3 flex items-start justify-between">
-                        <div className="flex flex-col gap-1">
+                    <div key={module.id} className="rounded-xl border border-border/60 p-5 hover:border-primary/30 transition-colors bg-muted/10">
+                      <div className="mb-4 flex items-start justify-between">
+                        <div className="flex flex-col gap-1.5">
                           <div className="flex items-center gap-2">
                             <FileCode className="h-4 w-4 text-primary" />
-                            <p className="text-sm font-medium">{module.module_name}</p>
+                            <p className="text-sm font-medium text-foreground">{module.module_name}</p>
                           </div>
                           {module.freelancer?.full_name ? (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <p className="text-xs text-muted-foreground">
                               Assigned to: <span className="font-medium text-foreground">{module.freelancer.full_name}</span>
                             </p>
                           ) : (
@@ -129,40 +148,43 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <Badge>{module.module_status}</Badge>
-                          <div className="text-xs text-muted-foreground whitespace-nowrap">
-                            Budget: <span className="font-medium">₹{module.budget_inr?.toLocaleString() || Math.round(project?.total_price * module.module_weight).toLocaleString()}</span>
-                          </div>
+                          <Badge className="bg-accent text-primary border-none text-[9px] font-mono uppercase tracking-widest px-2 py-0.5">{module.module_status}</Badge>
+                          <span className="text-[10px] font-mono text-muted-foreground">
+                            ₹{module.budget_inr?.toLocaleString() || Math.round(project?.total_price * module.module_weight).toLocaleString()}
+                          </span>
                         </div>
                       </div>
                       <div className="mb-2">
                         <Progress value={module.module_status === 'completed' ? 100 : module.module_status === 'in_progress' ? 55 : 20} />
                       </div>
                       {module.due_at && (
-                        <p className="text-[10px] text-right text-muted-foreground tracking-wider uppercase">ETA: {new Date(module.due_at).toLocaleString()}</p>
+                        <p className="text-[9px] text-right font-mono text-muted-foreground tracking-widest uppercase mt-2">ETA: {new Date(module.due_at).toLocaleString()}</p>
                       )}
                     </div>
                   ))}
                 </div>
               </Card>
 
-              <Card className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <History className="h-5 w-5 text-primary" />
-                  <p className="font-semibold">Execution Timeline</p>
+              {/* Execution Timeline */}
+              <Card className="p-8 border-border/60 shadow-sm bg-card">
+                <div className="flex items-center gap-3 mb-8">
+                  <History className="h-4 w-4 text-primary" />
+                  <h2 className="text-[10px] font-mono font-bold tracking-[0.3em] text-muted-foreground uppercase">Execution Timeline</h2>
                 </div>
                 <div className="space-y-6">
                   {logs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic text-center py-4">Waiting for first execution update...</p>
+                    <div className="flex flex-col items-center justify-center py-12 bg-muted/10 border border-dashed border-border/50 rounded-xl">
+                      <p className="text-sm text-muted-foreground italic">Waiting for first execution update...</p>
+                    </div>
                   ) : (
                     logs.map((log, i) => (
-                      <div key={log.id} className="relative pl-6 border-l border-border pb-6 last:pb-0">
-                        <div className="absolute -left-1.5 top-1 h-3 w-3 rounded-full bg-primary" />
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</p>
-                          {log.percent_delta > 0 && <Badge className="bg-emerald-500/10 text-emerald-500 border-none">+{log.percent_delta}% progress</Badge>}
+                      <div key={log.id} className="relative pl-8 border-l-2 border-border/40 pb-6 last:pb-0 hover:border-primary/40 transition-colors">
+                        <div className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-primary shadow-[0_0_6px_rgba(154,123,79,0.4)]" />
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">{new Date(log.created_at).toLocaleString()}</p>
+                          {log.percent_delta > 0 && <Badge className="bg-accent text-primary border-none text-[9px] font-mono">+{log.percent_delta}%</Badge>}
                         </div>
-                        <p className="text-sm">{log.public_summary}</p>
+                        <p className="text-sm text-foreground font-light leading-relaxed">{log.public_summary}</p>
                       </div>
                     ))
                   )}
@@ -170,49 +192,47 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               </Card>
             </div>
 
-            <div className="space-y-6">
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-bold uppercase tracking-wider text-gray-500">System Output</p>
-                  <Badge className="bg-emerald-500/10 text-emerald-500 border-none animate-pulse px-3 py-1 font-mono text-[10px]">
-                    {latestDeploymentUrl ? 'LIVE_PRODUCTION' : 'SIMULATED_ENVIRONMENT'}
+            <div className="space-y-8">
+              {/* System Output */}
+              <Card className="p-6 border-border/60 shadow-sm bg-card">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-[10px] font-mono font-bold tracking-[0.3em] text-muted-foreground uppercase">System Output</h2>
+                  <Badge className="bg-accent text-primary border-none text-[9px] font-mono uppercase tracking-widest px-2 py-1">
+                    {latestDeploymentUrl ? 'LIVE' : 'SIMULATED'}
                   </Badge>
                 </div>
                 {latestDeploymentUrl ? (
                   <div className="relative group">
-                    <iframe className="h-[480px] w-full rounded-xl border-2 border-border bg-white shadow-2xl transition-all group-hover:border-primary/30" src={latestDeploymentUrl} />
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="outline" onClick={() => window.open(latestDeploymentUrl, '_blank')}>
+                    <iframe className="h-[400px] w-full rounded-xl border border-border bg-white shadow-sm transition-all group-hover:border-primary/30" src={latestDeploymentUrl} />
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="outline" className="text-[10px] font-mono uppercase tracking-wider bg-card/90 backdrop-blur-sm" onClick={() => window.open(latestDeploymentUrl, '_blank')}>
                         Open External
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div className="relative h-[480px] w-full overflow-hidden rounded-xl border-2 border-slate-800 bg-slate-950 p-0 font-mono text-[11px] text-emerald-400 shadow-2xl flex flex-col">
+                  <div className="relative h-[400px] w-full overflow-hidden rounded-xl border border-border bg-foreground p-0 font-mono text-[11px] text-primary shadow-sm flex flex-col">
                     {/* Simulated Browser Header */}
-                    <div className="flex items-center gap-3 border-b border-white/5 bg-slate-900/50 px-4 py-3 shrink-0">
+                    <div className="flex items-center gap-3 border-b border-white/10 bg-white/5 px-4 py-3 shrink-0">
                       <div className="flex gap-1.5">
-                        <div className="h-3 w-3 rounded-full bg-red-500/40" />
-                        <div className="h-3 w-3 rounded-full bg-amber-500/40" />
-                        <div className="h-3 w-3 rounded-full bg-emerald-500/40" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/60" />
                       </div>
-                      <div className="flex-1 flex items-center rounded-lg bg-black/40 px-3 py-1.5 text-[10px] text-emerald-500/40 border border-white/5">
+                      <div className="flex-1 flex items-center rounded-md bg-black/30 px-3 py-1.5 text-[10px] text-white/30 border border-white/5">
                         {project?.title?.toLowerCase().replace(/\s+/g, '-') || 'project'}.gigzs.preview
                       </div>
                     </div>
-
                     {/* Log Stream Terminal */}
                     <div className="flex-1 p-4 overflow-y-auto space-y-1.5">
                       {logs.length === 0 ? (
-                        <div className="text-emerald-500/50 animate-pulse mt-2">Waiting for execution logs...</div>
+                        <div className="text-white/30 animate-pulse mt-2">Waiting for execution logs...</div>
                       ) : (
                         [...logs].reverse().map((log) => (
                           <div key={log.id} className="flex gap-3 font-mono leading-relaxed">
-                            <span className="text-emerald-500/40 shrink-0">
-                              {new Date(log.created_at).toLocaleTimeString()}
-                            </span>
-                            <span className={log.percent_delta > 0 ? "text-emerald-400" : "text-emerald-500/80"}>
-                              <span className="text-white/70">[system]</span> {log.public_summary} {log.percent_delta > 0 ? `(+${log.percent_delta}%)` : ''}
+                            <span className="text-white/20 shrink-0">{new Date(log.created_at).toLocaleTimeString()}</span>
+                            <span className={log.percent_delta > 0 ? "text-primary" : "text-white/50"}>
+                              <span className="text-white/40">[sys]</span> {log.public_summary} {log.percent_delta > 0 ? `(+${log.percent_delta}%)` : ''}
                             </span>
                           </div>
                         ))
@@ -222,23 +242,24 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 )}
               </Card>
 
-              <Card className="p-4">
-                <p className="text-sm font-medium mb-3">Managed Resources</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 rounded border border-border bg-card/50">
-                    <span className="text-xs">GitHub Repository</span>
-                    <a href={project?.github_repo_url || `https://github.com/gigzs-deploy/${project?.id}`} target="_blank" rel="noreferrer" className="text-[10px] hover:underline flex items-center gap-1 text-primary">
-                      {project?.github_repo_url ? 'View Live Repo' : 'View Repo (Pending)'}
+              {/* Managed Resources */}
+              <Card className="p-6 border-border/60 shadow-sm bg-card">
+                <h2 className="text-[10px] font-mono font-bold tracking-[0.3em] text-muted-foreground uppercase mb-4">Managed Resources</h2>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-muted/10 hover:border-primary/20 transition-colors">
+                    <span className="text-sm font-light text-foreground">GitHub Repository</span>
+                    <a href={project?.github_repo_url || `https://github.com/gigzs-deploy/${project?.id}`} target="_blank" rel="noreferrer" className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary hover:underline">
+                      {project?.github_repo_url ? 'View Repo' : 'Pending'}
                     </a>
                   </div>
-                  <div className="flex items-center justify-between p-2 rounded border border-border bg-card/50">
-                    <span className="text-xs">Cloud Environment</span>
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-muted/10 hover:border-primary/20 transition-colors">
+                    <span className="text-sm font-light text-foreground">Cloud Environment</span>
                     {latestDeploymentUrl ? (
-                      <a href={latestDeploymentUrl} target="_blank" rel="noreferrer" className="text-[10px] hover:underline flex items-center gap-1 text-primary">
+                      <a href={latestDeploymentUrl} target="_blank" rel="noreferrer" className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary hover:underline">
                         Open URL
                       </a>
                     ) : (
-                      <Badge variant="outline" className="text-[10px]">PENDING LOGS</Badge>
+                      <Badge className="bg-muted text-muted-foreground text-[9px] font-mono uppercase tracking-widest border-none">Pending</Badge>
                     )}
                   </div>
                 </div>

@@ -4,31 +4,32 @@
 
 :root {
   --font-scale: 1.1;
-  /* Modern High-Contrast Light Theme */
-  --background: 210 40% 98%;
-  /* Very light gray/blue background */
-  --foreground: 222 47% 11%;
-  /* Very dark navy text for high contrast */
+  /* Nexus Light Theme (White & Brown) */
+  --background: 40 10% 98%;
+  /* #FAF9F6 - warm off-white */
+  --foreground: 20 10% 3%;
+  /* #080705 - near black with warm tint for text */
   --card: 0 0% 100%;
   /* Pure white cards */
-  --muted: 210 40% 93%;
-  /* Slightly darker background for muted elements */
-  --muted-foreground: 215 16% 47%;
-  /* Medium gray text */
-  --border: 214 32% 91%;
-  /* Light gray borders */
-  --primary: 221 83% 53%;
-  /* Vibrant blue primary */
-  --primary-foreground: 210 40% 98%;
+  --muted: 40 5% 95%;
+  /* Slightly darker warm white for muted elements */
+  --muted-foreground: 40 5% 40%;
+  /* Medium warm gray text */
+  --border: 40 10% 90%;
+  /* Light warm gray borders */
+  --primary: 25 35% 45%;
+  /* #9A7B4F - Sophisticated Sepia/Brown primary */
+  --primary-foreground: 40 10% 98%;
   /* White text on primary buttons */
-  --accent: 210 40% 93%;
-  /* Light blue accent */
-  --sidebar-background: 222 47% 11%;
-  /* Dark sidebar for contrast */
-  --sidebar-foreground: 210 40% 98%;
-  /* White text in sidebar */
-  --sidebar-accent: 217 33% 17%;
-  --sidebar-border: 217 33% 17%;
+  --accent: 25 35% 95%;
+  /* Very light brown/sepia accent */
+  --sidebar-background: 40 10% 97%;
+  /* Very light warm sidebar */
+  --sidebar-foreground: 20 10% 3%;
+  /* Dark text in sidebar */
+  --sidebar-accent: 40 10% 93%;
+  /* Subtle highlight in sidebar */
+  --sidebar-border: 40 10% 90%;
 }
 
 html[data-theme='minimalist'] {
