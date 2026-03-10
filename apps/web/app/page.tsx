@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, RotateCcw, EyeOff, Activity } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { motion, useScroll, useTransform, useInView, useSpring, useVelocity, useAnimationFrame, AnimatePresence } from 'framer-motion';
@@ -443,6 +444,21 @@ export default function HomePage() {
               </MagneticButton>
             </Link>
           </motion.div>
+
+          {/* Partners Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2, duration: 0.8 }}
+            style={{ y: parallaxCTA }}
+            className="mt-24 pt-10 border-t border-white/5 flex flex-col items-center gap-8 w-full max-w-2xl"
+          >
+            <p className="text-[9px] font-mono tracking-[0.4em] uppercase text-white/30 font-bold">In Partnership With</p>
+            <div className="flex flex-wrap items-center justify-center gap-12 md:gap-20 opacity-50 hover:opacity-100 transition-opacity duration-700">
+              <span className="text-2xl md:text-3xl font-black tracking-[0.3em] uppercase text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">GIGZS</span>
+              <Image src="/images/godaddy-logo.png" alt="GoDaddy" width={140} height={45} className="object-contain brightness-0 invert opacity-90" priority />
+            </div>
+          </motion.div>
         </motion.div>
 
 
@@ -543,6 +559,16 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-    </main >
+
+      {/* Powered by Airo Builder Fixed Badge */}
+      <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
+        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-black/40 border border-white/10 backdrop-blur-xl shadow-2xl pointer-events-auto hover:bg-white/5 hover:border-white/20 transition-all cursor-default group">
+          <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
+          <span className="text-[10px] font-mono tracking-[0.2em] text-white/50 uppercase group-hover:text-white/80 transition-colors">
+            Powered by <span className="text-violet-400 font-bold tracking-widest">Airo Builder</span>
+          </span>
+        </div>
+      </div>
+    </main>
   );
 }
