@@ -31,166 +31,33 @@
   --sidebar-border: 217 33% 17%;
 }
 
-html[data-theme='cyberpunk'] {
-  --background: 240 10% 2%;
-  /* #050508 */
-  --foreground: 162 100% 50%;
-  /* #00FFB2 - Mint Neon */
-  --card: 240 10% 4%;
-  --muted: 240 10% 6%;
-  --muted-foreground: 162 50% 40%;
-  --border: 162 100% 50% / 0.15;
-  --primary: 162 100% 50%;
-  --primary-foreground: 240 10% 2%;
-  --accent: 180 100% 65%;
-  /* #4DFFFF - Cyan */
-  --sidebar-background: 240 10% 3%;
-  --sidebar-foreground: 162 100% 50%;
-  --sidebar-accent: 162 100% 50% / 0.1;
-  --sidebar-border: 162 100% 50% / 0.05;
-}
+html[data-theme='minimalist'] {
+  /* Minimalist Sepia Palette */
+  --background: 20 10% 3%;
+  /* #080705 - near black with warm tint */
+  --foreground: 40 10% 98%;
+  /* #FAF9F6 - warm off-white */
+  --card: 20 10% 5%;
+  /* #0D0C0A */
+  --muted: 20 10% 8%;
+  --muted-foreground: 40 5% 50%;
+  /* muted warm gray */
+  --border: 40 10% 100% / 0.08;
+  /* subtle warm white border */
+  --primary: 25 35% 45%;
+  /* #9A7B4F - Sophisticated Sepia/Brown */
+  --primary-foreground: 40 10% 98%;
+  --accent: 25 35% 45%;
+  --sidebar-background: 20 10% 4%;
+  --sidebar-foreground: 40 10% 98%;
+  --sidebar-accent: 20 10% 7%;
+  --sidebar-border: 40 10% 100% / 0.05;
 
-/* Grain Texture Overlay */
-.grain-overlay {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-  opacity: 0.03;
-  pointer-events: none;
-  z-index: 9999;
-  mix-blend-mode: overlay;
-}
-
-/* Glitch Animation */
-@keyframes glitch {
-  0% {
-    transform: translate(0);
-  }
-
-  20% {
-    transform: translate(-2px, 2px);
-  }
-
-  40% {
-    transform: translate(-2px, -2px);
-  }
-
-  60% {
-    transform: translate(2px, 2px);
-  }
-
-  80% {
-    transform: translate(2px, -2px);
-  }
-
-  100% {
-    transform: translate(0);
-  }
-}
-
-.animate-glitch {
-  animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
-  animation-play-state: paused;
-}
-
-.animate-glitch:hover {
-  animation-play-state: running;
-}
-
-/* Scanline Effect */
-@keyframes scanline {
-  0% {
-    transform: translateY(-100%);
-  }
-
-  100% {
-    transform: translateY(100%);
-  }
-}
-
-.scanline::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom,
-      transparent 50%,
-      rgba(0, 255, 178, 0.05) 50%);
-  background-size: 100% 4px;
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* Custom Crosshair Cursor */
-.custom-cursor {
-  width: 20px;
-  height: 20px;
-  position: fixed;
-  pointer-events: none;
-  z-index: 10000;
-  mix-blend-mode: difference;
-  transition: transform 0.15s ease-out;
-}
-
-.custom-cursor::before,
-.custom-cursor::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  background: var(--primary);
-  transform: translate(-50%, -50%);
-}
-
-.custom-cursor::before {
-  width: 100%;
-  height: 1px;
-}
-
-.custom-cursor::after {
-  width: 1px;
-  height: 100%;
-}
-
-.custom-cursor.hover {
-  transform: scale(2) rotate(45deg);
-}
-
-/* Button Border Sweep */
-@keyframes border-sweep {
-  0% {
-    clip-path: inset(0 100% 0 0);
-  }
-
-  25% {
-    clip-path: inset(0 0 100% 0);
-  }
-
-  50% {
-    clip-path: inset(0 0 0 100%);
-  }
-
-  75% {
-    clip-path: inset(100% 0 0 0);
-  }
-
-  100% {
-    clip-path: inset(0 100% 0 0);
-  }
-}
-
-.btn-sweep {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-sweep::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border: 1px solid var(--primary);
-  animation: border-sweep 2s linear infinite;
+  /* Nexus Proximity Variables */
+  --proximity-x: 50%;
+  --proximity-y: 50%;
+  --glass-opacity: 0.03;
+  --glass-blur: 12px;
 }
 
 html[data-theme='ocean'] {
@@ -799,4 +666,102 @@ html {
 .focus-visible:focus {
   outline: 2px solid #9A7B4F;
   outline-offset: 2px;
+}
+
+/* Nexus Glassmorphism */
+.glass-panel {
+  background: rgba(255, 255, 255, var(--glass-opacity));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-heavy {
+  background: rgba(255, 255, 255, calc(var(--glass-opacity) * 2));
+  backdrop-filter: blur(calc(var(--glass-blur) * 2));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Staggered Mask Reveal */
+.mask-reveal {
+  mask-image: linear-gradient(to right, black 50%, transparent 50%);
+  mask-size: 200% 100%;
+  mask-position: 100% 0;
+  transition: mask-position 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mask-reveal.active {
+  mask-position: 0 0;
+}
+
+/* Cursor Proximity Lighting */
+.proximity-glow {
+  position: relative;
+}
+
+.proximity-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle 200px at var(--proximity-x) var(--proximity-y),
+      rgba(154, 123, 79, 0.1),
+      transparent 80%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.proximity-glow:hover::before {
+  opacity: 1;
+}
+
+/* Neural Flux Container */
+.neural-container {
+  mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(500%);
+  }
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+
+  20% {
+    transform: translate(-2px, 2px);
+  }
+
+  40% {
+    transform: translate(-2px, -2px);
+  }
+
+  60% {
+    transform: translate(2px, 2px);
+  }
+
+  80% {
+    transform: translate(2px, -2px);
+  }
+
+  100% {
+    transform: translate(0);
+  }
+}
+
+.animate-scanline {
+  animation: scanline 8s linear infinite;
+}
+
+.animate-glitch {
+  animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+  opacity: 0.3;
 }

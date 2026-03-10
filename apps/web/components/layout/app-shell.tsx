@@ -69,6 +69,15 @@ export function AppShell({
         if (payload?.profile?.avatar_url) setAvatarUrl(payload.profile.avatar_url);
       } catch { /* ignore */ }
     })();
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth) * 100;
+      const y = (e.clientY / window.innerHeight) * 100;
+      document.documentElement.style.setProperty('--proximity-x', `${x}%`);
+      document.documentElement.style.setProperty('--proximity-y', `${y}%`);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   const initials = (name ?? 'Gigzs')

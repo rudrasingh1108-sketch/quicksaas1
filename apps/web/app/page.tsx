@@ -1,376 +1,532 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { motion, useScroll, useTransform, useInView } from 'framer-motion';
-import { Terminal, Shield, Zap, Activity, Globe, Cpu, ChevronRight } from 'lucide-react';
+import { ArrowRight, RotateCcw, EyeOff, Activity } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { motion, useScroll, useTransform, useInView, useSpring, useVelocity, useAnimationFrame, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
+import NeuralFlux from '../components/ui/neural-flux';
+import SystemHUD from '../components/ui/system-hud';
+import NeuralTrail from '../components/ui/neural-trail';
 
-// ── COMPONENTS ─────────────────────────────────────────────────────────────
+// ── CLIENT ONLY WRAPPER ──────────────────────────────────────────────────────
+function ClientOnly({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return <>{children}</>;
+}
 
-function GlitchText({ text }: { text: string }) {
+// ── LIVE TICKER ───────────────────────────────────────────────────────────────
+const TICKER = [
+  'UPDATE  →  "Logic core synchronized"',
+  'UPDATE  →  "Infrastructure layer ready"',
+  'UPDATE  →  "Security handshake complete"',
+  'INTERNAL  →  [shift handoff — system integrity high]',
+  'UPDATE  →  "Operational milestone reached"',
+];
+function DataTicker() {
+  const [idx, setIdx] = useState(0);
+  const [cursor, setCursor] = useState(true);
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % TICKER.length), 4000);
+    const c = setInterval(() => setCursor(v => !v), 530);
+    return () => { clearInterval(t); clearInterval(c); };
+  }, []);
   return (
-    <div className="relative inline-block group">
-      <span className="relative z-10">{text}</span>
-      <span
-        className="absolute top-0 left-0 -z-10 text-[#00FFB2] opacity-0 group-hover:opacity-70 group-hover:animate-glitch select-none"
-        style={{ clipPath: 'inset(40% 0 61% 0)', animationDuration: '0.2s' }}
-      >
-        {text}
-      </span>
-      <span
-        className="absolute top-0 left-0 -z-10 text-[#4DFFFF] opacity-0 group-hover:opacity-70 group-hover:animate-glitch select-none"
-        style={{ clipPath: 'inset(18% 0 82% 0)', animationDuration: '0.3s', animationDirection: 'reverse' }}
-      >
-        {text}
-      </span>
+    <div className="font-mono text-[11px] tracking-wider text-primary/70 h-5 overflow-hidden transition-all duration-700">
+      &gt; {TICKER[idx]}{cursor ? '█' : '\u00A0'}
     </div>
   );
 }
 
-function LiveTerminal() {
-  const [lines, setLines] = useState<string[]>([]);
-  const fullLines = useMemo(() => [
-    "> Initialize Gigzs Protocol...",
-    "> Scoping requirements...",
-    "> Deploying specialist unit...",
-    "> Handoff complete ✓",
-    "> Milestone verified ✓",
-    "> All systems operational."
-  ], []);
+// ── SCROLL-REVEAL WORD COMPONENT ──────────────────────────────────────────────
 
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      setLines(prev => {
-        const next = [...prev, fullLines[i]];
-        return next.slice(-4);
-      });
-      i = (i + 1) % fullLines.length;
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [fullLines]);
+function ScrollRevealText({ text, className }: { text: string; className?: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start 0.9", "start 0.2"]
+  });
+
+  const words = text.split(' ');
 
   return (
-    <div className="w-full max-w-lg mx-auto mt-12 font-mono text-xs bg-black/60 border border-primary/20 p-5 rounded-sm shadow-[0_0_30px_rgba(0,255,178,0.1)] backdrop-blur-xl">
-      <div className="flex gap-1.5 mb-4 border-b border-primary/10 pb-3">
-        <div className="w-2 h-2 rounded-full bg-primary/40" />
-        <div className="w-2 h-2 rounded-full bg-primary/20" />
-        <div className="w-2 h-2 rounded-full bg-primary/10" />
-      </div>
-      <div className="space-y-2 min-h-[100px]">
-        {lines.map((line, idx) => (
-          <div key={idx} className="flex gap-3 items-start animate-slide-up">
-            <span className="text-primary/40 mt-0.5">$</span>
-            <span className="text-primary/90 leading-tight">{line}</span>
+    <div ref={containerRef} className={cn("relative", className)}>
+      {words.map((w, i) => {
+        const start = i / words.length;
+        const end = start + (1 / words.length);
+        return (
+          <span key={i} className="inline-block mr-2 overflow-hidden">
+            <motion.span
+              style={{
+                opacity: useTransform(scrollYProgress, [start, end], [0, 1]),
+                y: useTransform(scrollYProgress, [start, end], [20, 0])
+              }}
+              className="inline-block"
+            >
+              {w}
+            </motion.span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function MagneticButton({ children, className, ...props }: any) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e;
+    const { left, top, width, height } = ref.current!.getBoundingClientRect();
+    const x = clientX - (left + width / 2);
+    const y = clientY - (top + height / 2);
+    setPosition({ x: x * 0.3, y: y * 0.3 });
+  };
+
+  const handleMouseLeave = () => {
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const { x, y } = position;
+
+  return (
+    <motion.button
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      animate={{ x, y }}
+      transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+// ── PROTOCOL STEPS ───────────────────────────────────────────────────────────
+const STICKY_ITEMS = [
+  { num: '01', title: 'Submit your brief.', body: 'Define your outcome in plain language. Our system orchestrates the technical execution silently.', tech: 'VECTOR_INIT // 0xFA42' },
+  { num: '02', title: 'Managed execution.', body: 'Specialists rotate on daily shifts. Handoffs are automated. Continuous progress is guaranteed.', tech: 'NEURAL_LINK // ACTIVE' },
+  { num: '03', title: 'Track outcomes.', body: 'Receive human-readable milestone updates. No jargon, just verified delivery telemetry.', tech: 'TELEMETRY_SYNC // 100%' },
+];
+
+function NeuralDataOverlay() {
+  const [text, setText] = useState('');
+  useEffect(() => {
+    const chars = '01ABCDEF';
+    const interval = setInterval(() => {
+      let str = '';
+      for (let i = 0; i < 8; i++) str += chars[Math.floor(Math.random() * chars.length)];
+      setText(str);
+    }, 150);
+    return () => clearInterval(interval);
+  }, []);
+  return <span className="font-mono text-[8px] opacity-20">{text}</span>;
+}
+
+function ProtocolSteps() {
+  const [activeStep, setActiveStep] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
+
+  const dialRotate = useTransform(scrollYProgress, [0, 1], [0, 360]);
+
+  return (
+    <div ref={containerRef} className="relative flex flex-col md:flex-row gap-20 px-6 md:px-20 py-32 max-w-7xl mx-auto">
+      {/* Structural Visual Bridge */}
+      <div className="hidden md:block absolute left-[33.333%] top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/5 to-transparent z-0 ml-[-40px]" />
+
+      {/* Sticky Scrub Area */}
+      <div className="md:sticky md:top-24 md:h-[calc(100vh-120px)] md:w-1/3 z-10 flex flex-col justify-between py-10">
+        <div className="relative">
+          <div className="absolute -inset-10 bg-primary/5 rounded-full blur-3xl opacity-30 pointer-events-none" />
+          <h3 className="text-[10px] font-mono font-black tracking-[0.5em] text-primary/50 uppercase mb-12 flex items-center gap-3">
+            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+            System Protocol
+          </h3>
+
+          <div className="relative w-32 h-32 mb-16">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-white/10" />
+              <motion.circle
+                cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeDasharray="283"
+                style={{ strokeDashoffset: useTransform(scrollYProgress, [0, 1], [283, 0]) }}
+                className="text-primary"
+              />
+            </svg>
+            <motion.div
+              style={{ rotate: dialRotate }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            >
+              <div className="w-0.5 h-16 bg-gradient-to-t from-primary/60 to-transparent absolute top-0 rounded-full" />
+            </motion.div>
+            <div className="absolute inset-0 flex items-center justify-center font-serif italic text-4xl text-primary/20">
+              <ClientOnly>{STICKY_ITEMS[activeStep].num}</ClientOnly>
+            </div>
           </div>
-        ))}
-        <div className="flex gap-3">
-          <span className="text-primary/40 mt-0.5">$</span>
-          <span className="w-1.5 h-4 bg-primary animate-pulse" />
+
+          <div className="space-y-6">
+            {STICKY_ITEMS.map((item, i) => (
+              <motion.div
+                key={item.num}
+                className={cn(
+                  "transition-all duration-1000 cursor-pointer group relative py-4 pl-6 border-l",
+                  activeStep === i
+                    ? "border-primary opacity-100 translate-x-4 bg-primary/[0.03]"
+                    : "border-white/5 opacity-20 hover:opacity-40 hover:border-white/20"
+                )}
+                onClick={() => {
+                  const element = document.getElementById(`step-${i}`);
+                  element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+              >
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-mono tracking-[0.3em] uppercase font-bold text-white/90">{item.title}</span>
+                  <div className="flex gap-4 items-center mt-2">
+                    <ClientOnly><NeuralDataOverlay /></ClientOnly>
+                    {activeStep === i && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex gap-1"
+                      >
+                        {[1, 2, 3].map(dot => (
+                          <div key={dot} className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: `${dot * 0.1}s` }} />
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-auto pt-12 border-t border-white/5 hidden md:block">
+            <div className="font-mono text-[9px] text-white/20 space-y-3 uppercase tracking-widest">
+              <div className="flex justify-between items-center text-[10px] text-primary/40 font-bold mb-2">
+                <span>Sync Status</span>
+                <span className="animate-pulse">Active</span>
+              </div>
+              <div className="grid grid-cols-5 gap-1">
+                <ClientOnly>
+                  {Array.from({ length: 15 }).map((_, j) => (
+                    <div key={j} className={cn("h-1 rounded-[1px]", j < (activeStep + 1) * 5 ? "bg-primary/30" : "bg-white/5")} />
+                  ))}
+                </ClientOnly>
+              </div>
+              <div className="flex justify-between">
+                <span>Node 0x{STICKY_ITEMS[activeStep].num}</span>
+                <ClientOnly><NeuralDataOverlay /></ClientOnly>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Content Area */}
+      <div className="relative flex-1 space-y-[60vh] pb-[20vh] pt-10">
+        {STICKY_ITEMS.map((item, i) => (
+          <motion.div
+            key={item.num}
+            id={`step-${i}`}
+            onViewportEnter={() => setActiveStep(i)}
+            initial={{ opacity: 0.2, y: 100 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ margin: "-25%" }}
+            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+            className="group relative"
+          >
+            <div className="absolute -inset-16 bg-primary/5 rounded-[40px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-[120px] pointer-events-none" />
+
+            <div className="relative glass-panel rounded-[2.5rem] p-16 md:p-24 border-white/5 hover:border-primary/40 transition-all duration-1000 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+              {/* Massive Phase Indicator Background */}
+              <div className="absolute -top-10 -right-10 font-mono text-[180px] text-white/[0.02] pointer-events-none select-none font-black leading-none uppercase italic">
+                {item.num}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+                className="font-mono text-[12px] tracking-[0.8em] text-primary/80 mb-14 uppercase flex items-center gap-6"
+              >
+                <div className="w-12 h-px bg-primary/50" />
+                {item.tech}
+              </motion.div>
+
+              <motion.h3
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="text-6xl md:text-8xl font-light tracking-tighter text-white mb-14 leading-[0.8] drop-shadow-2xl"
+              >
+                {item.title}
+              </motion.h3>
+
+              <motion.p
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="text-white/40 font-light leading-relaxed text-2xl max-w-xl mb-16"
+              >
+                {item.body}
+              </motion.p>
+
+              <div className="flex items-center justify-between border-t border-white/5 pt-12">
+                <div className="flex items-center gap-8">
+                  <div className="flex -space-x-3">
+                    {[1, 2, 3, 4, 5].map(j => (
+                      <div key={j} className="w-9 h-9 rounded-full border border-white/10 bg-[#0A0908] flex items-center justify-center font-mono text-[10px] text-white/40 backdrop-blur-xl shadow-lg">
+                        {j}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[11px] font-mono text-white/30 uppercase tracking-[0.3em] font-bold">Vector Shifting</div>
+                </div>
+                <div className="font-mono text-[11px] tracking-[0.5em] text-primary/50 font-bold uppercase">
+                  <ClientOnlyHex />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function StatItem({ value, label }: { value: string; label: string }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-  const [count, setCount] = useState(0);
-
+function ClientOnlyHex() {
+  const [hex, setHex] = useState('0x000000');
   useEffect(() => {
-    if (isInView) {
-      const target = parseInt(value);
-      let start = 0;
-      const duration = 2000;
-      const increment = target / (duration / 16);
-
-      const timer = setInterval(() => {
-        start += increment;
-        if (start >= target) {
-          setCount(target);
-          clearInterval(timer);
-        } else {
-          setCount(Math.floor(start));
-        }
-      }, 16);
-      return () => clearInterval(timer);
-    }
-  }, [isInView, value]);
-
-  return (
-    <div ref={ref} className="group py-10 px-6 border-l border-primary/10 last:border-r hover:bg-primary/[0.02] transition-colors">
-      <div className="text-5xl font-black tracking-tighter text-primary mb-2 flex items-baseline">
-        {count}{value.includes('+') ? '+' : ''}
-        <span className="text-sm font-mono ml-2 opacity-50">{value.includes('%') ? '%' : ''}</span>
-      </div>
-      <div className="text-[9px] font-mono tracking-[0.4em] text-muted-foreground uppercase">{label}</div>
-    </div>
-  );
+    setHex(`0x${Math.random().toString(16).slice(2, 8).toUpperCase()}`);
+  }, []);
+  return <>{hex}</>;
 }
-
-function ProtocolCard({ index, title, desc, icon: Icon }: { index: string; title: string; desc: string; icon: any }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay: parseInt(index) * 0.1 }}
-      className="group relative p-10 bg-white/[0.01] border border-primary/10 backdrop-blur-2xl rounded-sm hover:border-primary transition-all duration-500 overflow-hidden"
-    >
-      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-      <div className="absolute -top-6 -left-6 font-mono text-6xl font-black text-primary/[0.03] group-hover:text-primary/5 select-none transition-colors">
-        {index}
-      </div>
-      <div className="mb-10 w-fit p-4 bg-primary/5 group-hover:bg-primary/10 transition-colors">
-        <Icon className="w-10 h-10 text-primary group-hover:scale-110 transition-transform" />
-      </div>
-      <h3 className="text-2xl font-light tracking-tight text-white mb-6 group-hover:text-primary transition-colors">{title}</h3>
-      <p className="text-muted-foreground font-light leading-relaxed text-lg">{desc}</p>
-    </motion.div>
-  );
-}
-
-// ── MAIN PAGE ──────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const [mounted, setMounted] = useState(false);
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
-  const [isHovering, setIsHovering] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"]
+  });
+
+  const parallaxY = useTransform(heroProgress, [0, 1], [0, 200]);
+  const heroOpacity = useTransform(heroProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
-    setMounted(true);
-    document.documentElement.setAttribute('data-theme', 'cyberpunk');
-
-    const moveCursor = (e: MouseEvent) => setCursorPos({ x: e.clientX, y: e.clientY });
-    window.addEventListener('mousemove', moveCursor);
+    document.documentElement.setAttribute('data-theme', 'minimalist');
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth) * 100;
+      const y = (e.clientY / window.innerHeight) * 100;
+      document.documentElement.style.setProperty('--proximity-x', `${x}%`);
+      document.documentElement.style.setProperty('--proximity-y', `${y}%`);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
     return () => {
       document.documentElement.removeAttribute('data-theme');
-      window.removeEventListener('mousemove', moveCursor);
+      window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
-  const { scrollYProgress } = useScroll();
-  const timelineHeight = useTransform(scrollYProgress, [0.4, 0.9], ["0%", "100%"]);
-
-  if (!mounted) return null;
-
   return (
-    <div className="min-h-screen bg-[#050508] text-white selection:bg-primary/30 cursor-none">
-      <div className="grain-overlay" />
+    <main className="relative bg-[#080705] text-white font-sans selection:bg-primary/30">
+      <ClientOnly>
+        <SystemHUD />
+        <NeuralTrail />
+        <NeuralFlux />
+      </ClientOnly>
 
-      {/* Custom Crosshair Cursor */}
-      <div
-        className={cn("custom-cursor", isHovering && "hover")}
-        style={{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }}
-      />
-
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 px-10 py-8 flex justify-between items-center bg-black/50 backdrop-blur-xl border-b border-white/5">
-        <div className="flex items-center gap-4">
-          <div className="w-4 h-4 bg-primary rotate-45 animate-pulse" />
-          <span className="font-mono text-xs tracking-[0.4em] font-black uppercase text-primary">GIGZS_CORE</span>
-        </div>
-        <div className="flex gap-12 font-mono text-[9px] tracking-[0.4em] text-white/40 uppercase">
-          <Link href="/pricing" className="hover:text-primary transition-colors" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>Protocol</Link>
-          <Link href="/tools" className="hover:text-primary transition-colors" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>Terminal</Link>
-          <Link href="/login" className="px-6 py-2 border border-primary/20 hover:border-primary transition-all text-primary" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>Account</Link>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section className="relative h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden pt-20">
-        <div className="absolute inset-0 z-0 opacity-10">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-primary" />
-                <circle cx="0" cy="0" r="1" className="fill-primary" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" className="animate-pulse" />
-          </svg>
+      {/* ════ 1. HERO — Minimalist ═════════════════════════════ */}
+      <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center px-6 md:px-20 py-20 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(154,123,79,0.05),transparent_70%)]" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay pointer-events-none" />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2 }}
-          className="relative z-10"
-        >
-          <div className="inline-flex items-center gap-3 mb-12 px-6 py-1.5 rounded-full border border-primary/20 bg-primary/5 backdrop-blur-md">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="font-mono text-[8px] tracking-[0.4em] text-primary uppercase">Managed Neural Factory Operational</span>
-          </div>
-
-          <h1 className="text-6xl md:text-9xl font-black tracking-tighter text-white mb-10 leading-[0.85] uppercase">
-            <GlitchText text="Order software." />
-            <br />
-            <span className="text-primary/40 italic">We execute.</span>
-          </h1>
-
-          <p className="text-muted-foreground font-light text-lg md:text-2xl max-w-3xl mx-auto leading-relaxed mb-16 tracking-wide">
-            The world's first industrial-grade digital factory.
-            Abstracted management. 24/7 continuous cycles. Verifiable outcomes.
-          </p>
-
-          <div className="flex flex-col md:flex-row gap-8 justify-center items-center">
-            <Link href="/signup" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
-              <button className="relative px-16 py-6 border-2 border-primary bg-primary text-black text-xs font-black uppercase tracking-[0.5em] hover:shadow-[0_0_80px_rgba(0,255,178,0.5)] transition-all duration-500 overflow-hidden group">
-                <span className="relative z-10">Launch Brief</span>
-                <div className="absolute inset-x-0 top-0 h-[2px] bg-white transform -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              </button>
-            </Link>
-            <Link href="/login" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
-              <button className="px-16 py-6 border-2 border-primary/10 text-primary text-xs font-black uppercase tracking-[0.5em] hover:bg-primary/5 transition-all">
-                Enter Terminal
-              </button>
-            </Link>
-          </div>
-
-          <LiveTerminal />
-        </motion.div>
-      </section>
-
-      {/* Marquee */}
-      <div className="w-full overflow-hidden bg-primary py-5 border-y border-white/10 rotate-[-1deg] scale-[1.02] mt-[-2vh] relative z-20">
-        <div className="flex whitespace-nowrap animate-marquee">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="flex gap-24 px-12 items-center">
-              <span className="text-[11px] font-mono font-black text-black tracking-[0.5em] uppercase italic">
-                E-COMMERCE // FINTECH // SAAS // MARKETPLACES // AI TOOLS // DEFI // CORE // NODE_RED
-              </span>
-              <Activity className="w-4 h-4 text-black animate-pulse" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats Bar */}
-      <section className="bg-black/80 px-10 border-b border-primary/10">
-        <div className="max-w-screen-2xl mx-auto grid grid-cols-2 lg:grid-cols-4">
-          <StatItem value="47" label="Systems Deployed" />
-          <StatItem value="3" label="Continents Synced" />
-          <StatItem value="100" label="Async Success" />
-          <StatItem value="168" label="Hrs/Week Capacity" />
-        </div>
-      </section>
-
-      {/* The Protocol Section */}
-      <section className="relative py-48 px-10 max-w-screen-2xl mx-auto">
-        <div className="text-center mb-40 space-y-6">
-          <div className="font-mono text-[10px] tracking-[0.5em] text-primary uppercase animate-pulse">Protocol Lifecyle</div>
-          <h2 className="text-5xl md:text-8xl font-black tracking-tighter text-white uppercase italic">Neural_Handoff</h2>
-        </div>
-
-        {/* Timeline Connector */}
-        <div className="absolute left-[50%] top-96 bottom-40 w-[1px] bg-primary/10 hidden lg:block">
+        {/* Neural Sculpture centerpiece */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] opacity-20 pointer-events-none select-none">
           <motion.div
-            style={{ height: timelineHeight }}
-            className="w-full bg-primary shadow-[0_0_20px_rgba(0,255,178,1)]"
+            animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+            transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+            className="w-full h-full rounded-full border border-primary/20 bg-gradient-to-tr from-primary/10 to-transparent blur-3xl"
+          />
+          <motion.div
+            animate={{ rotate: -360, x: [0, 50, 0] }}
+            transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+            className="absolute inset-20 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-3xl shadow-[inset_0_0_100px_rgba(255,255,255,0.05)]"
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 lg:gap-y-64">
-          <div className="lg:pt-20">
-            <ProtocolCard
-              index="01"
-              title="Intelligence Scoping"
-              desc="Deep architectural scan of mission objectives. Requirements are mutated into machine-readable execution vectors."
-              icon={Terminal}
-            />
-          </div>
-          <div className="lg:mt-80 lg:text-right flex justify-end">
-            <div className="max-w-xl">
-              <ProtocolCard
-                index="02"
-                title="Specialist Rotation"
-                desc="Elite engineers from the global cohort execute in 24/7 shifts. Automated handoffs ensure zero momentum loss."
-                icon={Cpu}
-              />
-            </div>
-          </div>
-          <div className="lg:-mt-20">
-            <ProtocolCard
-              index="03"
-              title="Telemetry Verified"
-              desc="Continuous health checks and milestone telemetry. Every byte is verified via automated protocol testing."
-              icon={Shield}
-            />
-          </div>
-          <div className="lg:mt-60 lg:text-right flex justify-end">
-            <div className="max-w-xl">
-              <ProtocolCard
-                index="04"
-                title="Vector Deployment"
-                desc="Platform initialization with full documentation and source relay. Post-deployment monitoring active."
-                icon={Zap}
-              />
-            </div>
+        <motion.div
+          className="relative z-20 flex flex-col items-center text-center px-6 max-w-5xl mx-auto"
+          style={{ y: parallaxY, opacity: heroOpacity }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="flex items-center gap-2 mb-12 px-5 py-2 rounded-full border border-white/5 bg-white/[0.03] backdrop-blur-xl proximity-glow"
+          >
+            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_12px_rgba(var(--primary),0.8)]" />
+            <span className="text-[10px] font-mono font-bold tracking-[0.3em] text-white/50 uppercase">Neural Link Synchronized</span>
+          </motion.div>
+
+          <motion.h1 className="text-[clamp(48px,9vw,120px)] font-light tracking-[-0.07em] leading-[0.85] text-white mb-10">
+            <motion.span
+              initial={{ clipPath: 'inset(100% 0 0 0)' }}
+              animate={{ clipPath: 'inset(0% 0 0 0)' }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+              className="block"
+            >
+              Order your software.
+            </motion.span>
+            <motion.span
+              initial={{ clipPath: 'inset(100% 0 0 0)' }}
+              animate={{ clipPath: 'inset(0% 0 0 0)' }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
+              className="block text-primary italic font-serif mt-2"
+            >
+              We'll handle the rest.
+            </motion.span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
+            className="text-white/40 text-lg md:text-xl max-w-xl font-light tracking-wide leading-relaxed mb-16"
+          >
+            Managed specialists. Continuous execution. Transparent outcomes.<br />
+            Your digital factory, operating silently in the background.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1, duration: 0.8 }}
+            className="flex flex-wrap items-center justify-center gap-6"
+          >
+            <Link href="/signup">
+              <MagneticButton className="px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.4em] transition-all hover:bg-primary hover:text-white shadow-2xl">
+                Initiate Vector
+              </MagneticButton>
+            </Link>
+            <Link href="/login">
+              <MagneticButton className="px-12 py-5 bg-transparent border border-white/10 text-white text-[10px] font-black uppercase tracking-[0.4em] transition-all hover:bg-white/5 backdrop-blur-xl">
+                Launch Brief
+              </MagneticButton>
+            </Link>
+          </motion.div>
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 opacity-20"
+        >
+          <div className="w-px h-12 bg-gradient-to-b from-primary to-transparent" />
+          <span className="text-[8px] font-mono tracking-[0.5em] uppercase">Scroll</span>
+        </motion.div>
+      </section>
+
+      {/* ════ 2. THE CONCEPT — DARK MODE ═══════════════════════════════════════ */}
+      <section className="relative z-30 bg-[#080705] py-40 px-6 md:px-20 border-t border-white/5 overflow-hidden">
+        {/* Decorative Grid */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(var(--primary) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
+        <div className="relative z-10 max-w-7xl mx-auto">
+          <ScrollRevealText
+            text="Commission digital products with zero management overhead. You define the brief. We deploy the specialists. Your solution ships continuously while you focus on the vision."
+            className="text-[clamp(28px,4.5vw,64px)] font-light leading-[1.05] tracking-tighter text-white max-w-5xl mb-32"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { title: 'ANONYMOUS', label: 'Team identity abstracted.', tech: 'ID_MASK: ENABLED' },
+              { title: 'MANAGED', label: 'Shift-based orchestration.', tech: 'OPS_SYNC: ACTIVE' },
+              { title: 'CONTINUOUS', label: '24/7 Execution cycles.', tech: 'THROUGHPUT: 100%' }
+            ].map((item, i) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.2 }}
+                viewport={{ once: true }}
+                className="group p-10 glass-panel rounded-3xl border-white/5 hover:border-primary/40 transition-all duration-700 relative overflow-hidden"
+              >
+                <div className="absolute -bottom-10 -right-10 font-mono text-8xl text-white/[0.02] group-hover:text-primary/[0.05] transition-colors duration-700 font-black italic select-none">
+                  {i + 1}
+                </div>
+                <div className="font-mono text-[9px] text-primary/40 mb-12 tracking-[0.5em]">{item.tech}</div>
+                <h4 className="text-4xl font-light text-white tracking-tighter mb-4 group-hover:translate-x-2 transition-transform duration-700">{item.title}</h4>
+                <p className="text-white/40 text-sm font-light leading-relaxed tracking-wide group-hover:text-white/60 transition-colors duration-700">{item.label}</p>
+                <div className="mt-12 h-px w-full bg-gradient-to-r from-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative bg-black pt-64 pb-20 px-10 overflow-hidden border-t border-primary/10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(0,255,178,0.05),transparent_70%)]" />
-
-        {/* Large ASCII Wordmark */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-black text-[30vw] text-primary/[0.015] tracking-tighter select-none pointer-events-none uppercase italic">
-          GIGZS_
+      {/* ════ 3. PROTOCOL ═══════════════════════════════════════ */}
+      <section className="bg-[#080705] border-t border-white/5">
+        <div className="px-6 md:px-20 pt-24">
+          <h2 className="text-[clamp(32px,5vw,72px)] font-light tracking-tight text-white border-b border-white/5 pb-10">
+            The Gigzs Protocol.
+          </h2>
         </div>
+        <ProtocolSteps />
+      </section>
 
-        <div className="max-w-screen-2xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-4 gap-24 mb-40">
-          <div className="lg:col-span-2 space-y-16">
-            <div className="flex items-center gap-5">
-              <div className="w-8 h-8 bg-primary rounded-sm" />
-              <span className="font-mono text-3xl font-black tracking-widest text-primary">GIGZS_PROTO</span>
-            </div>
-            <p className="text-muted-foreground font-light text-xl max-w-xl leading-relaxed italic">
-              "The factory never sleeps. The protocol never fails. Order software, receive certainty."
-            </p>
-            <div className="flex items-center gap-5 px-6 py-3 border border-primary/20 w-fit bg-primary/[0.02]">
-              <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_15px_rgba(0,255,178,1)]" />
-              <span className="font-mono text-[10px] tracking-[0.4em] text-primary uppercase font-bold">NODE_01: ONLINE // SYNC_LOCK</span>
-            </div>
-          </div>
-
-          <div className="space-y-10">
-            <h4 className="font-mono text-[11px] tracking-[0.5em] text-white uppercase font-black">Directory</h4>
-            <nav className="flex flex-col gap-5 font-mono text-xs text-muted-foreground uppercase tracking-[0.2em]">
-              <Link href="#" className="hover:text-primary transition-colors hover:translate-x-2 transition-transform">01_Briefing</Link>
-              <Link href="#" className="hover:text-primary transition-colors hover:translate-x-2 transition-transform">02_Terminal</Link>
-              <Link href="#" className="hover:text-primary transition-colors hover:translate-x-2 transition-transform">03_Protocols</Link>
-              <Link href="#" className="hover:text-primary transition-colors hover:translate-x-2 transition-transform">04_Nodes</Link>
-            </nav>
-          </div>
-
-          <div className="space-y-10 text-right lg:text-left">
-            <h4 className="font-mono text-[11px] tracking-[0.5em] text-white uppercase font-black">Uptime_Stats</h4>
-            <div className="space-y-5 font-mono text-xs text-muted-foreground uppercase tracking-[0.2em]">
-              <div className="flex justify-between lg:justify-start lg:gap-10"><span>Core_Load:</span> <span className="text-primary">12.4%</span></div>
-              <div className="flex justify-between lg:justify-start lg:gap-10"><span>Nodes:</span> <span className="text-primary">472/472</span></div>
-              <div className="flex justify-between lg:justify-start lg:gap-10"><span>Sync:</span> <span className="text-primary">100%</span></div>
-            </div>
-          </div>
+      {/* ════ 4. CTA ═══════════════════════════════════════ */}
+      <section className="bg-white py-32 px-6 md:px-20 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-[clamp(36px,5.5vw,80px)] font-light tracking-tighter text-black leading-tight mb-12">
+            Define the outcome.<br />
+            <span className="text-primary italic font-serif">We'll deploy the execution.</span>
+          </h2>
+          <Link href="/signup">
+            <button className="px-12 py-5 bg-black text-white text-[10px] font-black uppercase tracking-[0.4em] transition-all hover:bg-black/90 shadow-2xl">
+              Initiate Vector
+            </button>
+          </Link>
         </div>
+      </section>
 
-        <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-center relative z-10 pt-12 border-t border-white/5 text-[9px] font-mono tracking-[0.6em] text-muted-foreground uppercase">
-          <div>© GIGZS_RELAY_FACTORY_2026 // ALL_RIGHTS_RESERVED</div>
-          <div className="flex gap-12 mt-6 md:mt-0">
-            <a href="#" className="hover:text-primary transition-colors">SEC_PROTOCOL</a>
-            <a href="#" className="hover:text-primary transition-colors">TOS_LINK</a>
+      {/* ════ 5. FOOTER ═══════════════════════════════════════ */}
+      <footer className="border-t border-white/5 bg-[#080705] py-16 px-6 md:px-20 flex flex-col md:flex-row justify-between items-start gap-12 font-mono text-[10px] text-white/20">
+        <div>
+          <p className="text-white/40 font-sans font-bold tracking-widest text-base mb-4 uppercase">Gigzs</p>
+          <p className="max-w-xs leading-relaxed tracking-wider">Managed Digital Factory for high-fidelity execution. Operating across continents, abstracts management, guarantees outcomes.</p>
+        </div>
+        <div className="flex gap-16">
+          <div className="flex flex-col gap-3">
+            <p className="text-white/40 tracking-[0.3em] uppercase mb-1">Navigation</p>
+            <Link href="/login" className="hover:text-primary transition-colors">LOGIN</Link>
+            <Link href="/signup" className="hover:text-primary transition-colors">REGISTER</Link>
+          </div>
+          <div className="flex flex-col gap-3">
+            <p className="text-white/40 tracking-[0.3em] uppercase mb-1">Contact</p>
+            <a href="mailto:ops@gigzs.io" className="hover:text-primary transition-colors">OPS@GIGZS.IO</a>
+          </div>
+          <div className="md:text-right">
+            <p className="mb-4">© {new Date().getFullYear()} GIGZS PVT. LTD.</p>
+            <p className="tracking-widest">NAGPUR // INDIA // 440010</p>
           </div>
         </div>
       </footer>
-
-      {/* Frame Elements */}
-      <div className="fixed inset-0 pointer-events-none z-[80] border-[1px] border-primary/5 m-6" />
-      <div className="fixed top-0 left-0 w-full h-[1px] bg-primary/30 blur-[2px] pointer-events-none z-[90]" />
-    </div>
+    </main >
   );
 }
