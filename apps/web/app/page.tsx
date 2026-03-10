@@ -318,8 +318,14 @@ export default function HomePage() {
     offset: ["start start", "end start"]
   });
 
-  const parallaxY = useTransform(heroProgress, [0, 1], [0, 200]);
-  const heroOpacity = useTransform(heroProgress, [0, 0.5], [1, 0]);
+  // Parallax layers — each text element scrolls at a different speed
+  const parallaxBadge = useTransform(heroProgress, [0, 1], [0, -60]);
+  const parallaxLine1 = useTransform(heroProgress, [0, 1], [0, -120]);
+  const parallaxLine2 = useTransform(heroProgress, [0, 1], [0, -180]);
+  const parallaxSub = useTransform(heroProgress, [0, 1], [0, -240]);
+  const parallaxCTA = useTransform(heroProgress, [0, 1], [0, -280]);
+  const heroOpacity = useTransform(heroProgress, [0, 0.6], [1, 0]);
+  const heroScale = useTransform(heroProgress, [0, 0.6], [1, 0.95]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'minimalist');
@@ -367,26 +373,30 @@ export default function HomePage() {
 
         <motion.div
           className="relative z-20 flex flex-col items-center text-center px-6 max-w-5xl mx-auto"
-          style={{ y: parallaxY, opacity: heroOpacity }}
+          style={{ opacity: heroOpacity, scale: heroScale }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
         >
+          {/* Badge — slowest parallax layer */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
+            style={{ y: parallaxBadge }}
             className="flex items-center gap-2 mb-12 px-5 py-2 rounded-full border border-white/5 bg-white/[0.03] backdrop-blur-xl proximity-glow"
           >
             <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_12px_rgba(var(--primary),0.8)]" />
             <span className="text-[10px] font-mono font-bold tracking-[0.3em] text-white/50 uppercase">Neural Link Synchronized</span>
           </motion.div>
 
+          {/* Headline — each line at different parallax speed */}
           <motion.h1 className="text-[clamp(48px,9vw,120px)] font-light tracking-[-0.07em] leading-[0.85] text-white mb-10">
             <motion.span
               initial={{ clipPath: 'inset(100% 0 0 0)' }}
               animate={{ clipPath: 'inset(0% 0 0 0)' }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+              style={{ y: parallaxLine1 }}
               className="block"
             >
               Order your software.
@@ -395,26 +405,31 @@ export default function HomePage() {
               initial={{ clipPath: 'inset(100% 0 0 0)' }}
               animate={{ clipPath: 'inset(0% 0 0 0)' }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
+              style={{ y: parallaxLine2 }}
               className="block text-primary italic font-serif mt-2"
             >
               We'll handle the rest.
             </motion.span>
           </motion.h1>
 
+          {/* Subtitle — faster parallax */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8 }}
+            style={{ y: parallaxSub }}
             className="text-white/40 text-lg md:text-xl max-w-xl font-light tracking-wide leading-relaxed mb-16"
           >
             Managed specialists. Continuous execution. Transparent outcomes.<br />
             Your digital factory, operating silently in the background.
           </motion.p>
 
+          {/* CTAs — fastest parallax */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1, duration: 0.8 }}
+            style={{ y: parallaxCTA }}
             className="flex flex-wrap items-center justify-center gap-6"
           >
             <Link href="/signup">
@@ -429,6 +444,7 @@ export default function HomePage() {
             </Link>
           </motion.div>
         </motion.div>
+
 
         {/* Scroll Indicator */}
         <motion.div
