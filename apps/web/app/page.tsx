@@ -4,13 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, RotateCcw, EyeOff, Activity } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { motion, useScroll, useTransform, useInView, useSpring, useVelocity, useAnimationFrame, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, useSpring, useVelocity, useAnimationFrame, AnimatePresence, useMotionValue } from 'framer-motion';
 import { cn } from '../lib/utils';
-import NeuralFlux from '../components/ui/neural-flux';
-import SystemHUD from '../components/ui/system-hud';
-import NeuralTrail from '../components/ui/neural-trail';
-
-// ── CLIENT ONLY WRAPPER ──────────────────────────────────────────────────────
+// Removed heavy components like MagneticButton and NeuralFlux to optimize performance
 function ClientOnly({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -75,38 +71,7 @@ function ScrollRevealText({ text, className }: { text: string; className?: strin
   );
 }
 
-function MagneticButton({ children, className, ...props }: any) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const { clientX, clientY } = e;
-    const { left, top, width, height } = ref.current!.getBoundingClientRect();
-    const x = clientX - (left + width / 2);
-    const y = clientY - (top + height / 2);
-    setPosition({ x: x * 0.3, y: y * 0.3 });
-  };
-
-  const handleMouseLeave = () => {
-    setPosition({ x: 0, y: 0 });
-  };
-
-  const { x, y } = position;
-
-  return (
-    <motion.button
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      animate={{ x, y }}
-      transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
-      className={className}
-      {...props}
-    >
-      {children}
-    </motion.button>
-  );
-}
+// MagneticButton was removed for performance optimization (layout thrashing)
 
 // ── PROTOCOL STEPS ───────────────────────────────────────────────────────────
 const STICKY_ITEMS = [
@@ -155,7 +120,7 @@ function ProtocolSteps() {
 
           <div className="relative w-32 h-32 mb-16">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-white/10" />
+              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-[#080705]/10" />
               <motion.circle
                 cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2"
                 strokeDasharray="283"
@@ -190,7 +155,7 @@ function ProtocolSteps() {
                 }}
               >
                 <div className="flex flex-col">
-                  <span className="text-[11px] font-mono tracking-[0.3em] uppercase font-bold text-white/90">{item.title}</span>
+                  <span className="text-[11px] font-mono tracking-[0.3em] uppercase font-bold text-[#080705]/90">{item.title}</span>
                   <div className="flex gap-4 items-center mt-2">
                     <ClientOnly><NeuralDataOverlay /></ClientOnly>
                     {activeStep === i && (
@@ -210,16 +175,16 @@ function ProtocolSteps() {
             ))}
           </div>
 
-          <div className="mt-auto pt-12 border-t border-white/5 hidden md:block">
-            <div className="font-mono text-[9px] text-white/20 space-y-3 uppercase tracking-widest">
-              <div className="flex justify-between items-center text-[10px] text-primary/40 font-bold mb-2">
+          <div className="mt-auto pt-12 border-t border-[#080705]/10 hidden md:block">
+            <div className="font-mono text-[9px] text-[#080705]/40 space-y-3 uppercase tracking-widest">
+              <div className="flex justify-between items-center text-[10px] text-primary font-bold mb-2">
                 <span>Sync Status</span>
                 <span className="animate-pulse">Active</span>
               </div>
               <div className="grid grid-cols-5 gap-1">
                 <ClientOnly>
                   {Array.from({ length: 15 }).map((_, j) => (
-                    <div key={j} className={cn("h-1 rounded-[1px]", j < (activeStep + 1) * 5 ? "bg-primary/30" : "bg-white/5")} />
+                    <div key={j} className={cn("h-1 rounded-[1px]", j < (activeStep + 1) * 5 ? "bg-primary/50" : "bg-[#080705]/10")} />
                   ))}
                 </ClientOnly>
               </div>
@@ -247,9 +212,9 @@ function ProtocolSteps() {
           >
             <div className="absolute -inset-16 bg-primary/5 rounded-[40px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 blur-[120px] pointer-events-none" />
 
-            <div className="relative glass-panel rounded-[2.5rem] p-16 md:p-24 border-white/5 hover:border-primary/40 transition-all duration-1000 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <div className="relative bg-white/70 backdrop-blur-md rounded-[2.5rem] p-16 md:p-24 border border-[#080705]/10 hover:border-primary/40 transition-all duration-1000 overflow-hidden shadow-sm hover:shadow-lg">
               {/* Massive Phase Indicator Background */}
-              <div className="absolute -top-10 -right-10 font-mono text-[180px] text-white/[0.02] pointer-events-none select-none font-black leading-none uppercase italic">
+              <div className="absolute -top-10 -right-10 font-mono text-[180px] text-[#080705]/[0.02] pointer-events-none select-none font-black leading-none uppercase italic">
                 {item.num}
               </div>
 
@@ -267,7 +232,7 @@ function ProtocolSteps() {
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="text-6xl md:text-8xl font-light tracking-tighter text-white mb-14 leading-[0.8] drop-shadow-2xl"
+                className="text-6xl md:text-8xl font-light tracking-tighter text-[#080705] mb-14 leading-[0.8] drop-shadow-sm"
               >
                 {item.title}
               </motion.h3>
@@ -276,23 +241,23 @@ function ProtocolSteps() {
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className="text-white/40 font-light leading-relaxed text-2xl max-w-xl mb-16"
+                className="text-[#080705]/50 font-light leading-relaxed text-2xl max-w-xl mb-16"
               >
                 {item.body}
               </motion.p>
 
-              <div className="flex items-center justify-between border-t border-white/5 pt-12">
+              <div className="flex items-center justify-between border-t border-[#080705]/10 pt-12">
                 <div className="flex items-center gap-8">
                   <div className="flex -space-x-3">
                     {[1, 2, 3, 4, 5].map(j => (
-                      <div key={j} className="w-9 h-9 rounded-full border border-white/10 bg-[#0A0908] flex items-center justify-center font-mono text-[10px] text-white/40 backdrop-blur-xl shadow-lg">
+                      <div key={j} className="w-9 h-9 rounded-full border border-white bg-[#FAF9F6] flex items-center justify-center font-mono text-[10px] text-[#080705]/50 shadow-sm relative z-10">
                         {j}
                       </div>
                     ))}
                   </div>
-                  <div className="text-[11px] font-mono text-white/30 uppercase tracking-[0.3em] font-bold">Vector Shifting</div>
+                  <div className="text-[11px] font-mono text-[#080705]/30 uppercase tracking-[0.3em] font-bold">Vector Shifting</div>
                 </div>
-                <div className="font-mono text-[11px] tracking-[0.5em] text-primary/50 font-bold uppercase">
+                <div className="font-mono text-[11px] tracking-[0.5em] text-primary/70 font-bold uppercase">
                   <ClientOnlyHex />
                 </div>
               </div>
@@ -319,7 +284,35 @@ export default function HomePage() {
     offset: ["start start", "end start"]
   });
 
-  // Parallax layers — each text element scrolls at a different speed
+  // ── Antigravity-Style Cursor Integration ──────────────────────────────────────
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Springs for silky smooth tracking
+  const springConfig = { damping: 40, stiffness: 150, mass: 0.8 };
+  const smoothX = useSpring(mouseX, springConfig);
+  const smoothY = useSpring(mouseY, springConfig);
+
+  // 3D Tilting Transforms for Text
+  const rotateX = useTransform(smoothY, [-600, 600], [12, -12]);
+  const rotateY = useTransform(smoothX, [-600, 600], [-12, 12]);
+
+  // Subtle reverse-parallax for the Aurora blobs
+  const parallaxBkgX = useTransform(smoothX, [-600, 600], [-40, 40]);
+  const parallaxBkgY = useTransform(smoothY, [-600, 600], [-40, 40]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    // Avoids re-renders by updating directly to motion values
+    const rect = heroRef.current?.getBoundingClientRect();
+    if (rect) {
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      mouseX.set(e.clientX - centerX);
+      mouseY.set(e.clientY - centerY);
+    }
+  }, [mouseX, mouseY]);
+
+  // ── Scroll Parallax Layers ────────────────────────────────────────────────────
   const parallaxBadge = useTransform(heroProgress, [0, 1], [0, -60]);
   const parallaxLine1 = useTransform(heroProgress, [0, 1], [0, -120]);
   const parallaxLine2 = useTransform(heroProgress, [0, 1], [0, -180]);
@@ -328,53 +321,74 @@ export default function HomePage() {
   const heroOpacity = useTransform(heroProgress, [0, 0.6], [1, 0]);
   const heroScale = useTransform(heroProgress, [0, 0.6], [1, 0.95]);
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', 'minimalist');
-    const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth) * 100;
-      const y = (e.clientY / window.innerHeight) * 100;
-      document.documentElement.style.setProperty('--proximity-x', `${x}%`);
-      document.documentElement.style.setProperty('--proximity-y', `${y}%`);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      document.documentElement.removeAttribute('data-theme');
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
+  // Removed global mousemove listener for `--proximity-x` to eliminate severe layout thrashing
 
   return (
-    <main className="relative bg-[#080705] text-white font-sans selection:bg-primary/30">
-      <ClientOnly>
-        <SystemHUD />
-        <NeuralTrail />
-        <NeuralFlux />
-      </ClientOnly>
+    <main className="relative bg-[#FAF9F6] text-[#080705] font-sans selection:bg-primary/20 overflow-x-hidden">
 
-      {/* ════ 1. HERO — Minimalist ═════════════════════════════ */}
-      <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center px-6 md:px-20 py-20 overflow-hidden">
+      {/* ════ 1. HERO — Glassy Aurora ═════════════════════════ */}
+      <section
+        ref={heroRef}
+        onPointerMove={handlePointerMove}
+        className="relative min-h-screen flex flex-col justify-center px-6 md:px-20 py-20 overflow-hidden"
+        style={{ perspective: "1500px" }}
+      >
+        {/* Antigravity Tracking Orb */}
+        <motion.div
+          style={{ x: smoothX, y: smoothY }}
+          className="pointer-events-none absolute top-1/2 left-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] z-10 -ml-[250px] -mt-[250px] mix-blend-multiply will-change-transform"
+        />
+
+        {/* Aurora gradient background */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(154,123,79,0.05),transparent_70%)]" />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay pointer-events-none" />
+          <div className="absolute inset-0 bg-[#FAF9F6]" />
+
+          {/* Animated Warm aurora blobs wrapped in cursor-parallax */}
+          <motion.div style={{ x: parallaxBkgX, y: parallaxBkgY }} className="absolute inset-0 will-change-transform">
+            <motion.div
+              animate={{ x: [0, 100, 0], y: [0, -50, 0], scale: [1, 1.1, 1] }}
+              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-[-20%] left-[-10%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(154,123,79,0.12),transparent_70%)] blur-3xl opacity-80"
+            />
+            <motion.div
+              animate={{ x: [0, -100, 0], y: [0, 100, 0], scale: [1, 1.2, 1] }}
+              transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-[10%] right-[-15%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(194,163,109,0.10),transparent_70%)] blur-3xl opacity-80"
+            />
+            <motion.div
+              animate={{ x: [0, 50, 0], y: [0, 50, 0], scale: [1, 0.9, 1] }}
+              transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute bottom-[5%] left-[30%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(214,193,159,0.08),transparent_70%)] blur-3xl opacity-80"
+            />
+          </motion.div>
+          {/* Subtle noise texture */}
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] mix-blend-multiply pointer-events-none" />
         </div>
 
-        {/* Neural Sculpture centerpiece */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] opacity-20 pointer-events-none select-none">
+        {/* Optimized Motion Graphics - removed borderRadius animation which causes severe layout thrashing */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] opacity-40 pointer-events-none select-none flex items-center justify-center mix-blend-multiply">
           <motion.div
-            animate={{ rotate: 360, scale: [1, 1.1, 1] }}
-            transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-            className="w-full h-full rounded-full border border-primary/20 bg-gradient-to-tr from-primary/10 to-transparent blur-3xl"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+            style={{ borderRadius: "40% 60% 70% 30% / 40% 50% 60% 50%" }}
+            className="absolute w-[600px] h-[600px] border border-primary/20 bg-gradient-to-tr from-primary/10 to-transparent blur-xl will-change-transform"
           />
           <motion.div
-            animate={{ rotate: -360, x: [0, 50, 0] }}
-            transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-            className="absolute inset-20 rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-3xl shadow-[inset_0_0_100px_rgba(255,255,255,0.05)]"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+            style={{ borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%" }}
+            className="absolute w-[800px] h-[800px] border border-[#c2a36d]/10 bg-gradient-to-bl from-[#c2a36d]/5 to-transparent blur-2xl will-change-transform"
           />
         </div>
 
         <motion.div
-          className="relative z-20 flex flex-col items-center text-center px-6 max-w-5xl mx-auto"
-          style={{ opacity: heroOpacity, scale: heroScale }}
+          className="relative z-20 flex flex-col items-center text-center px-6 max-w-5xl mx-auto transform-gpu"
+          style={{
+            opacity: heroOpacity,
+            scale: heroScale,
+            rotateX,   // Antigravity 3D Tilt Integration
+            rotateY
+          }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
@@ -385,14 +399,14 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             style={{ y: parallaxBadge }}
-            className="flex items-center gap-2 mb-12 px-5 py-2 rounded-full border border-white/5 bg-white/[0.03] backdrop-blur-xl proximity-glow"
+            className="flex items-center gap-2 mb-12 px-5 py-2 rounded-full border border-primary/20 bg-primary/5 backdrop-blur-xl proximity-glow"
           >
-            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_12px_rgba(var(--primary),0.8)]" />
-            <span className="text-[10px] font-mono font-bold tracking-[0.3em] text-white/50 uppercase">Neural Link Synchronized</span>
+            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_12px_rgba(154,123,79,0.6)]" />
+            <span className="text-[10px] font-mono font-bold tracking-[0.3em] text-primary/70 uppercase">Neural Link Synchronized</span>
           </motion.div>
 
           {/* Headline — each line at different parallax speed */}
-          <motion.h1 className="text-[clamp(48px,9vw,120px)] font-light tracking-[-0.07em] leading-[0.85] text-white mb-10">
+          <motion.h1 className="text-[clamp(48px,9vw,120px)] font-light tracking-[-0.07em] leading-[0.85] text-[#080705] mb-10">
             <motion.span
               initial={{ clipPath: 'inset(100% 0 0 0)' }}
               animate={{ clipPath: 'inset(0% 0 0 0)' }}
@@ -419,13 +433,13 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8 }}
             style={{ y: parallaxSub }}
-            className="text-white/40 text-lg md:text-xl max-w-xl font-light tracking-wide leading-relaxed mb-16"
+            className="text-[#080705]/50 text-lg md:text-xl max-w-xl font-light tracking-wide leading-relaxed mb-16"
           >
             Managed specialists. Continuous execution. Transparent outcomes.<br />
             Your digital factory, operating silently in the background.
           </motion.p>
 
-          {/* CTAs — fastest parallax */}
+          {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -434,14 +448,14 @@ export default function HomePage() {
             className="flex flex-wrap items-center justify-center gap-6"
           >
             <Link href="/signup">
-              <MagneticButton className="px-12 py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.4em] transition-all hover:bg-primary hover:text-white shadow-2xl">
+              <button className="px-12 py-5 bg-[#080705] text-white text-[10px] font-black uppercase tracking-[0.4em] transition-all duration-300 hover:bg-primary hover:-translate-y-1 hover:shadow-xl shadow-lg rounded-none">
                 Initiate Vector
-              </MagneticButton>
+              </button>
             </Link>
             <Link href="/login">
-              <MagneticButton className="px-12 py-5 bg-transparent border border-white/10 text-white text-[10px] font-black uppercase tracking-[0.4em] transition-all hover:bg-white/5 backdrop-blur-xl">
+              <button className="px-12 py-5 bg-transparent border border-[#080705]/20 text-[#080705] text-[10px] font-black uppercase tracking-[0.4em] transition-all duration-300 hover:bg-[#080705]/5 hover:-translate-y-1 hover:shadow-lg backdrop-blur-xl rounded-none">
                 Launch Brief
-              </MagneticButton>
+              </button>
             </Link>
           </motion.div>
 
@@ -451,12 +465,12 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.8 }}
             style={{ y: parallaxCTA }}
-            className="mt-24 pt-10 border-t border-white/5 flex flex-col items-center gap-8 w-full max-w-2xl"
+            className="mt-24 pt-10 border-t border-[#080705]/8 flex flex-col items-center gap-8 w-full max-w-2xl"
           >
-            <p className="text-[9px] font-mono tracking-[0.4em] uppercase text-white/30 font-bold">In Partnership With</p>
-            <div className="flex flex-wrap items-center justify-center gap-12 md:gap-20 opacity-50 hover:opacity-100 transition-opacity duration-700">
-              <span className="text-2xl md:text-3xl font-black tracking-[0.3em] uppercase text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">GIGZS</span>
-              <Image src="/images/godaddy-logo.png" alt="GoDaddy" width={140} height={45} className="object-contain brightness-0 invert opacity-90" priority />
+            <p className="text-[9px] font-mono tracking-[0.4em] uppercase text-[#080705]/30 font-bold">In Partnership With</p>
+            <div className="flex flex-wrap items-center justify-center gap-12 md:gap-20 opacity-40 hover:opacity-80 transition-opacity duration-700">
+              <span className="text-2xl md:text-3xl font-black tracking-[0.3em] uppercase text-[#080705]">GIGZS</span>
+              <Image src="/images/godaddy-logo.png" alt="GoDaddy" width={140} height={45} className="object-contain brightness-0 opacity-80" priority />
             </div>
           </motion.div>
         </motion.div>
@@ -473,16 +487,16 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* ════ 2. THE CONCEPT — DARK MODE ═══════════════════════════════════════ */}
-      <section className="relative z-30 bg-[#080705] py-40 px-6 md:px-20 border-t border-white/5 overflow-hidden">
+      {/* ════ 2. THE CONCEPT ═══════════════════════════════════ */}
+      <section className="relative z-30 bg-[#F0ECE4] py-40 px-6 md:px-20 border-t border-[#080705]/8 overflow-hidden">
         {/* Decorative Grid */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(var(--primary) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(#9A7B4F 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
         <div className="relative z-10 max-w-7xl mx-auto">
           <ScrollRevealText
             text="Commission digital products with zero management overhead. You define the brief. We deploy the specialists. Your solution ships continuously while you focus on the vision."
-            className="text-[clamp(28px,4.5vw,64px)] font-light leading-[1.05] tracking-tighter text-white max-w-5xl mb-32"
+            className="text-[clamp(28px,4.5vw,64px)] font-light leading-[1.05] tracking-tighter text-[#080705] max-w-5xl mb-32"
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -497,15 +511,15 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.2 }}
                 viewport={{ once: true }}
-                className="group p-10 glass-panel rounded-3xl border-white/5 hover:border-primary/40 transition-all duration-700 relative overflow-hidden"
+                className="group p-10 bg-white/70 backdrop-blur-sm rounded-3xl border border-primary/10 hover:border-primary/30 transition-all duration-700 relative overflow-hidden shadow-sm hover:shadow-md"
               >
-                <div className="absolute -bottom-10 -right-10 font-mono text-8xl text-white/[0.02] group-hover:text-primary/[0.05] transition-colors duration-700 font-black italic select-none">
+                <div className="absolute -bottom-10 -right-10 font-mono text-8xl text-[#080705]/[0.03] group-hover:text-primary/[0.06] transition-colors duration-700 font-black italic select-none">
                   {i + 1}
                 </div>
-                <div className="font-mono text-[9px] text-primary/40 mb-12 tracking-[0.5em]">{item.tech}</div>
-                <h4 className="text-4xl font-light text-white tracking-tighter mb-4 group-hover:translate-x-2 transition-transform duration-700">{item.title}</h4>
-                <p className="text-white/40 text-sm font-light leading-relaxed tracking-wide group-hover:text-white/60 transition-colors duration-700">{item.label}</p>
-                <div className="mt-12 h-px w-full bg-gradient-to-r from-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="font-mono text-[9px] text-primary/60 mb-12 tracking-[0.5em]">{item.tech}</div>
+                <h4 className="text-4xl font-light text-[#080705] tracking-tighter mb-4 group-hover:translate-x-2 transition-transform duration-700">{item.title}</h4>
+                <p className="text-[#080705]/50 text-sm font-light leading-relaxed tracking-wide group-hover:text-[#080705]/70 transition-colors duration-700">{item.label}</p>
+                <div className="mt-12 h-px w-full bg-gradient-to-r from-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               </motion.div>
             ))}
           </div>
@@ -513,9 +527,9 @@ export default function HomePage() {
       </section>
 
       {/* ════ 3. PROTOCOL ═══════════════════════════════════════ */}
-      <section className="bg-[#080705] border-t border-white/5">
+      <section className="bg-[#FAF9F6] border-t border-[#080705]/8">
         <div className="px-6 md:px-20 pt-24">
-          <h2 className="text-[clamp(32px,5vw,72px)] font-light tracking-tight text-white border-b border-white/5 pb-10">
+          <h2 className="text-[clamp(32px,5vw,72px)] font-light tracking-tight text-[#080705] border-b border-[#080705]/8 pb-10">
             The Gigzs Protocol.
           </h2>
         </div>
@@ -523,14 +537,14 @@ export default function HomePage() {
       </section>
 
       {/* ════ 4. CTA ═══════════════════════════════════════ */}
-      <section className="bg-white py-32 px-6 md:px-20 text-center">
+      <section className="bg-[#F0ECE4] py-32 px-6 md:px-20 text-center border-t border-[#080705]/8">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-[clamp(36px,5.5vw,80px)] font-light tracking-tighter text-black leading-tight mb-12">
+          <h2 className="text-[clamp(36px,5.5vw,80px)] font-light tracking-tighter text-[#080705] leading-tight mb-12">
             Define the outcome.<br />
             <span className="text-primary italic font-serif">We'll deploy the execution.</span>
           </h2>
           <Link href="/signup">
-            <button className="px-12 py-5 bg-black text-white text-[10px] font-black uppercase tracking-[0.4em] transition-all hover:bg-black/90 shadow-2xl">
+            <button className="px-12 py-5 bg-[#080705] text-white text-[10px] font-black uppercase tracking-[0.4em] transition-all hover:bg-primary shadow-xl">
               Initiate Vector
             </button>
           </Link>
@@ -538,7 +552,7 @@ export default function HomePage() {
       </section>
 
       {/* ════ 5. FOOTER ═══════════════════════════════════════ */}
-      <footer className="border-t border-white/5 bg-[#080705] py-16 px-6 md:px-20 flex flex-col md:flex-row justify-between items-start gap-12 font-mono text-[10px] text-white/20">
+      <footer className="border-t border-[#080705]/8 bg-[#080705] py-16 px-6 md:px-20 flex flex-col md:flex-row justify-between items-start gap-12 font-mono text-[10px] text-white/20">
         <div>
           <p className="text-white/40 font-sans font-bold tracking-widest text-base mb-4 uppercase">Gigzs</p>
           <p className="max-w-xs leading-relaxed tracking-wider">Managed Digital Factory for high-fidelity execution. Operating across continents, abstracts management, guarantees outcomes.</p>
@@ -562,10 +576,10 @@ export default function HomePage() {
 
       {/* Powered by Airo Builder Fixed Badge */}
       <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
-        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-black/40 border border-white/10 backdrop-blur-xl shadow-2xl pointer-events-auto hover:bg-white/5 hover:border-white/20 transition-all cursor-default group">
-          <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse shadow-[0_0_8px_rgba(139,92,246,0.6)]" />
-          <span className="text-[10px] font-mono tracking-[0.2em] text-white/50 uppercase group-hover:text-white/80 transition-colors">
-            Powered by <span className="text-violet-400 font-bold tracking-widest">Airo Builder</span>
+        <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/60 border border-[#080705]/10 backdrop-blur-xl shadow-lg pointer-events-auto hover:bg-white/80 hover:border-primary/20 transition-all cursor-default group">
+          <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse shadow-[0_0_8px_rgba(139,92,246,0.4)]" />
+          <span className="text-[10px] font-mono tracking-[0.2em] text-[#080705]/50 uppercase group-hover:text-[#080705]/80 transition-colors">
+            Powered by <span className="text-violet-600 font-bold tracking-widest">Airo Builder</span>
           </span>
         </div>
       </div>
