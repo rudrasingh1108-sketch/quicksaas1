@@ -105,7 +105,7 @@ function ProtocolSteps() {
   const dialRotate = useTransform(scrollYProgress, [0, 1], [0, 360]);
 
   return (
-    <div ref={containerRef} className="relative flex flex-col md:flex-row gap-20 px-6 md:px-20 py-32 max-w-7xl mx-auto">
+    <div ref={containerRef} className="relative flex flex-col md:flex-row md:items-start gap-20 px-6 md:px-20 py-32 max-w-7xl mx-auto">
       {/* Structural Visual Bridge */}
       <div className="hidden md:block absolute left-[33.333%] top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/5 to-transparent z-0 ml-[-40px]" />
 
@@ -324,7 +324,7 @@ export default function HomePage() {
   // Removed global mousemove listener for `--proximity-x` to eliminate severe layout thrashing
 
   return (
-    <main className="relative bg-[#FAF9F6] text-[#080705] font-sans selection:bg-primary/20 overflow-x-hidden">
+    <main className="relative bg-[#FAF9F6] text-[#080705] font-sans selection:bg-primary/20">
 
       {/* ════ 1. HERO — Glassy Aurora ═════════════════════════ */}
       <section
