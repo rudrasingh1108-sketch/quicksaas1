@@ -71,6 +71,31 @@ function ScrollRevealText({ text, className }: { text: string; className?: strin
   );
 }
 
+// ── BLUR-REVEAL TEXT COMPONENT ────────────────────────────────────────────────
+
+function BlurRevealText({ text, delay = 0, className }: { text: string; delay?: number; className?: string }) {
+  const words = text.split(' ');
+  return (
+    <div className={cn("flex flex-wrap justify-center", className)}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, filter: 'blur(10px)', y: 20 }}
+          animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+          transition={{
+            duration: 0.8,
+            delay: delay + i * 0.1,
+            ease: [0.2, 0.65, 0.3, 0.9],
+          }}
+          className="inline-block mr-[0.2em] last:mr-0"
+        >
+          {word}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
 // MagneticButton was removed for performance optimization (layout thrashing)
 
 // ── PROTOCOL STEPS ───────────────────────────────────────────────────────────
@@ -339,26 +364,29 @@ export default function HomePage() {
           className="pointer-events-none absolute top-1/2 left-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] z-10 -ml-[250px] -mt-[250px] mix-blend-multiply will-change-transform"
         />
 
-        {/* Aurora gradient background */}
-        <div className="absolute inset-0 z-0">
+        {/* Aurora gradient background & Technical Grid */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <div className="absolute inset-0 bg-[#FAF9F6]" />
+          
+          {/* Technical Grid Overlay */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#0807050a_1px,transparent_1px),linear-gradient(to_bottom,#0807050a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
           {/* Animated Warm aurora blobs wrapped in cursor-parallax */}
-          <motion.div style={{ x: parallaxBkgX, y: parallaxBkgY }} className="absolute inset-0 will-change-transform">
-            <motion.div
-              animate={{ x: [0, 100, 0], y: [0, -50, 0], scale: [1, 1.1, 1] }}
-              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-[-20%] left-[-10%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,rgba(154,123,79,0.12),transparent_70%)] blur-3xl opacity-80"
+          <motion.div style={{ x: parallaxBkgX, y: parallaxBkgY }} className="absolute inset-0 will-change-transform opacity-70">
+            <motion.div 
+              animate={{ x: [0, 80, 0], y: [0, -40, 0], scale: [1, 1.15, 1] }} 
+              transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }} 
+              className="absolute top-[-25%] left-[-15%] w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle,#9A7B4F20,transparent_75%)] blur-[120px]" 
             />
-            <motion.div
-              animate={{ x: [0, -100, 0], y: [0, 100, 0], scale: [1, 1.2, 1] }}
-              transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-[10%] right-[-15%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(194,163,109,0.10),transparent_70%)] blur-3xl opacity-80"
+            <motion.div 
+              animate={{ x: [0, -80, 0], y: [0, 80, 0], scale: [1, 1.25, 1] }} 
+              transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }} 
+              className="absolute top-[5%] right-[-20%] w-[700px] h-[700px] rounded-full bg-[radial-gradient(circle,#C2A36D18,transparent_75%)] blur-[100px]" 
             />
-            <motion.div
-              animate={{ x: [0, 50, 0], y: [0, 50, 0], scale: [1, 0.9, 1] }}
-              transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute bottom-[5%] left-[30%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(214,193,159,0.08),transparent_70%)] blur-3xl opacity-80"
+            <motion.div 
+              animate={{ x: [0, 40, 0], y: [0, 40, 0], scale: [1, 0.9, 1] }} 
+              transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }} 
+              className="absolute bottom-[0%] left-[25%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,#D6C19F12,transparent_75%)] blur-[80px]" 
             />
           </motion.div>
           {/* Subtle noise texture */}
@@ -405,27 +433,23 @@ export default function HomePage() {
             <span className="text-[10px] font-mono font-bold tracking-[0.3em] text-primary/70 uppercase">Neural Link Synchronized</span>
           </motion.div>
 
-          {/* Headline — each line at different parallax speed */}
-          <motion.h1 className="text-[clamp(48px,9vw,120px)] font-light tracking-[-0.07em] leading-[0.85] text-[#080705] mb-10">
-            <motion.span
-              initial={{ clipPath: 'inset(100% 0 0 0)' }}
-              animate={{ clipPath: 'inset(0% 0 0 0)' }}
-              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-              style={{ y: parallaxLine1 }}
-              className="block"
-            >
-              Order your software.
-            </motion.span>
-            <motion.span
-              initial={{ clipPath: 'inset(100% 0 0 0)' }}
-              animate={{ clipPath: 'inset(0% 0 0 0)' }}
-              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
-              style={{ y: parallaxLine2 }}
-              className="block text-primary italic font-serif mt-2"
-            >
-              We'll handle the rest.
-            </motion.span>
-          </motion.h1>
+          {/* Headline — Premium Antigravity Reveal */}
+          <h1 className="text-[clamp(48px,9vw,120px)] font-light tracking-[-0.07em] leading-[0.85] text-[#080705] mb-10">
+            <div className="overflow-hidden py-2">
+              <BlurRevealText 
+                text="Order your software." 
+                delay={0.2}
+                className="justify-center" 
+              />
+            </div>
+            <div className="overflow-hidden py-2">
+              <BlurRevealText 
+                text="We'll handle the rest." 
+                delay={0.8}
+                className="text-primary italic font-serif mt-2 justify-center" 
+              />
+            </div>
+          </h1>
 
           {/* Subtitle — faster parallax */}
           <motion.p
